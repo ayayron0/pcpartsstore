@@ -1,0 +1,141 @@
+openapi: 3.0.3
+
+info:
+  title: PC Parts Store API
+  version: 1.0.0
+  description: An API for managing PC parts, users, orders, and brands.
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local Development Server
+
+paths:
+  /parts:
+    get:
+      summary: Get all PC parts
+      parameters:
+        - in: query
+          name: brand
+          required: false
+          schema:
+            type: string
+          description: Filter parts by brand
+      responses:
+        '200':
+          description: A list of PC parts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Part'
+
+    post:
+      summary: Add a new PC part
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Part'
+      responses:
+        '201':
+          description: PC part successfully created
+
+  /parts/{id}:
+    get:
+      summary: Get a specific PC part
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A single PC part
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Part'
+        '404':
+          description: PC part not found
+
+    put:
+      summary: Update a specific PC part
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Part'
+      responses:
+        '200':
+          description: PC part successfully updated
+
+    delete:
+      summary: Delete a specific PC part
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: PC part successfully deleted
+
+components:
+  schemas:
+    Part:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "GeForce RTX 5070"
+        category:
+          type: string
+          example: "GPU"
+        brand:
+          type: string
+          example: "NVIDIA"
+        price:
+          type: number
+          example: 749.99
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        status:
+          type: string
+
+    Brand:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
