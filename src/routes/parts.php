@@ -8,15 +8,115 @@ use Slim\App;
 /** @var PDO $pdo */
 
 $app->get('/parts', function (Request $request, Response $response) use ($pdo) {
-    $stmt = $pdo->query("SELECT * FROM parts");
+    // $stmt = $pdo->query("SELECT * FROM parts");
+
+    // $parts = $stmt->fetchAll();
+
+    // $response->getBody()->write(
+    //     json_encode($parts)
+    // );
+
+    // return $response
+    //     ->withHeader('Content-Type', 'application/json');
+
+
+    // GET category, brand_id and page from query parameter using _GET super-global variable
+    $category = $_GET['category'] ?? null;
+    $page = $_GET['page'] ?? 1;
+    $brand_id = $_GET['brand_id'] ?? null;
+
+    // Invalid query parameters validation
+    $allowedParams = ['category', 'page', 'brand_id'];
+
+    foreach ($_GET as $key => $value) {
+        if (!in_array($key, $allowedParams)) {
+            $response->getBody()->write(
+                json_encode(['error' => 'Invalid query parameter'])
+            );
+
+            return $response
+                ->withStatus(400)
+                ->withHeader('Content-Type', 'application/json');
+        }
+    }
+
+    // Pagination validation
+    if (!is_numeric($page) || $page < 1 || $page > 100) {
+        $response->getBody()->write(
+            json_encode(['error' => 'Invalid pagination'])
+        );
+
+        return $response
+            ->withStatus(400)
+            ->withHeader('Content-Type', 'application/json');
+    }
+
+    // Brand ID validation
+    if ($brand_id !== null && (!is_numeric($brand_id) || (int)$brand_id < 1)) {
+        $response->getBody()->write(
+            json_encode(['error' => 'Invalid brand ID'])
+        );
+
+        return $response
+            ->withStatus(400)
+            ->withHeader('Content-Type', 'application/json');
+    }
+
+    $page = (int)$page;
+    $pageSize = 2;
+    $offset = ($page - 1) * $pageSize;
+    $brand_id = $brand_id !== null ? (int)$brand_id : null;
+
+    $whereClauses = [];
+    $executeParams = [];
+
+    if (isset($category)) {
+        $whereClauses[] = "category = :category";
+        $executeParams['category'] = $category;
+    }
+
+    if (isset($brand_id)) {
+        $whereClauses[] = "brand_id = :brand_id";
+        $executeParams['brand_id'] = $brand_id;
+    }
+
+    $whereSql = count($whereClauses) > 0 ? "WHERE " . implode(" AND ", $whereClauses) : "";
+
+    // Count total number of matching parts
+    $countSql = "SELECT COUNT(*) AS total FROM parts $whereSql";
+
+    if (count($executeParams) > 0) {
+        $_stmt = $pdo->prepare($countSql);
+        $_stmt->execute($executeParams);
+    } else {
+        $_stmt = $pdo->query($countSql);
+    }
+
+    $count = $_stmt->fetch();
+    $total = (int)$count['total'];
+
+    // Pagination logic
+    $executeParams['limit'] = $pageSize;
+    $executeParams['offset'] = $offset;
+
+    $pageSql = "SELECT * FROM parts $whereSql ORDER BY id ASC LIMIT :limit OFFSET :offset";
+
+    $stmt = $pdo->prepare($pageSql);
+    $stmt->execute($executeParams);
 
     $parts = $stmt->fetchAll();
 
     $response->getBody()->write(
-        json_encode($parts)
+        json_encode([
+            'data'     => $parts,
+            'page'     => $page,
+            'pageSize' => $pageSize,
+            'total'    => $total
+        ])
     );
 
     return $response
+        ->withStatus(200)
         ->withHeader('Content-Type', 'application/json');
 });
 
