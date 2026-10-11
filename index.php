@@ -1,6 +1,6 @@
 <?php
 require __DIR__ . '/backend/vendor/autoload.php';
-$pdo = require __DIR__ . '/config/dbconnection.php';
+$pdo = require __DIR__ . '/src/config/dbconnection.php';
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -10,8 +10,8 @@ $app = AppFactory::create();
 
 $app->setBasePath('/pcpartsstore');
 
-require __DIR__ . '/routes/brands.php';
-require __DIR__ . '/routes/parts.php';
+require __DIR__ . '/src/routes/brands.php';
+require __DIR__ . '/src/routes/parts.php';
 
 $app->get('/', function (Request $request, Response $response) {
     $response->getBody()->write(
