@@ -3,7 +3,9 @@
 Team: Aaron Hossain and Daiyan Abrar Samin.
 
 ## Stack and structure
+
 PHP, Slim 4, PDO, MariaDB/MySQL, Composer, HTML and JavaScript.
+
 - index.php: API entry point; base path /pcpartsstore.
 - src/routes/: handlers and database queries.
 - src/config/: connection and configuration example.
@@ -18,7 +20,7 @@ PHP, Slim 4, PDO, MariaDB/MySQL, Composer, HTML and JavaScript.
 3. From the `backend` folder, run `D:\Wampoon\composer.bat install`.
 4. Create `pcpartsstore_db` in phpMyAdmin and import `database/pcpartsstore_db.sql`.
 5. If needed, copy `src/config/database.example.php` to `database.local.php` in the same folder and adjust credentials.
-6. Open http://localhost/pcpartsstore/browse.html.
+6. Open <http://localhost/pcpartsstore/browse.html>.
 
 Apache needs `mod_rewrite` and `.htaccess` support. Adjust the URL if using another port.
 
@@ -43,5 +45,5 @@ For the empty check, select the fixture database in local configuration, then re
 
 ## Handoff
 
-Teammate review completed. 
+Teammate review completed.
 Submitted commit SHA:

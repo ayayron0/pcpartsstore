@@ -1,13 +1,192 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DoubleBolt — PC Parts</title>
-<style>body{font-family:system-ui;max-width:1000px;margin:40px auto;padding:0 20px;background:#f5f7fb;color:#182135}section{background:white;padding:24px;margin:20px 0;border:1px solid #dce2ec;border-radius:10px}button,input{font:inherit;padding:8px}button{cursor:pointer}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:12px;border-bottom:1px solid #ddd}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#eef1f6;padding:12px}</style></head><body>
-<h1>DoubleBolt</h1><p>Browse PC parts and select an item to see its details.</p>
-<section><h2>PC parts</h2><button id="load">Load parts</button><p id="list-status" role="status"></p><table><thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Price</th><th>Details</th></tr></thead><tbody id="parts"></tbody></table><button id="previous" disabled>Previous page</button><button id="next" disabled>Next page</button><details><summary>List response</summary><pre id="list-json">No request yet.</pre></details></section>
-<section><h2>Part details</h2><form id="detail-form"><label for="part-id">Part ID</label> <input id="part-id" type="number" min="1" step="1" required value="1"> <button>Get part</button></form><p id="detail-status" role="status"></p><div id="detail"></div><details><summary>Item response</summary><pre id="detail-json">No request yet.</pre></details></section>
-<script>
-const base = new URL('./', location.href); let page = 1; const el = id => document.getElementById(id);
-async function read(path,statusId,jsonId){const response=await fetch(new URL(path,base),{headers:{Accept:'application/json'}});const body=await response.json();el(statusId).textContent='GET '+path+' — '+response.status+' ('+response.headers.get('content-type')+')';el(jsonId).textContent=JSON.stringify(body,null,2);if(!response.ok)throw new Error(body.error||'Request failed');return body;}
-async function loadParts(){el('parts').replaceChildren();el('previous').disabled=el('next').disabled=true;el('list-status').textContent='Loading parts…';try{const result=await read('parts?page='+page,'list-status','list-json');if(!result.data.length)el('list-status').textContent+=' — No parts found.';for(const part of result.data){const row=document.createElement('tr');for(const value of [part.id,part.name,part.category,'$'+Number(part.price).toFixed(2)]){const cell=document.createElement('td');cell.textContent=value;row.append(cell);}const cell=document.createElement('td'),button=document.createElement('button');button.textContent='View';button.onclick=()=>{el('part-id').value=part.id;loadPart();};cell.append(button);row.append(cell);el('parts').append(row);}el('previous').disabled=page<=1;el('next').disabled=page*result.pageSize>=result.total;}catch(error){el('list-status').textContent+=' — '+error.message;}}
-async function loadPart(){el('detail').replaceChildren();el('detail-status').textContent='Loading part…';try{const part=await read('parts/'+encodeURIComponent(el('part-id').value),'detail-status','detail-json');const fields=document.createElement('dl');for(const [label,value]of Object.entries(part)){const term=document.createElement('dt'),description=document.createElement('dd');term.textContent=label;description.textContent=value;fields.append(term,description);}el('detail').append(fields);}catch(error){el('detail-status').textContent+=' — '+error.message;}}
-el('load').onclick=()=>{page=1;loadParts();};el('previous').onclick=()=>{page--;loadParts();};el('next').onclick=()=>{page++;loadParts();};el('detail-form').onsubmit=event=>{event.preventDefault();loadPart();};loadParts();
-</script></body></html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>DoubleBolt — PC Parts</title>
+    <style>
+      body {
+        font-family: system-ui;
+        max-width: 1000px;
+        margin: 40px auto;
+        padding: 0 20px;
+        background: #f5f7fb;
+        color: #182135;
+      }
+      section {
+        background: white;
+        padding: 24px;
+        margin: 20px 0;
+        border: 1px solid #dce2ec;
+        border-radius: 10px;
+      }
+      button,
+      input {
+        font: inherit;
+        padding: 8px;
+      }
+      button {
+        cursor: pointer;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 12px;
+        border-bottom: 1px solid #ddd;
+      }
+      pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        background: #eef1f6;
+        padding: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>DoubleBolt</h1>
+    <p>Browse PC parts and select an item to see its details.</p>
+    <section>
+      <h2>PC parts</h2>
+      <button id="load">Load parts</button>
+      <p id="list-status" role="status"></p>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody id="parts"></tbody>
+      </table>
+      <button id="previous" disabled>Previous page</button
+      ><button id="next" disabled>Next page</button>
+      <details>
+        <summary>List response</summary>
+        <pre id="list-json">No request yet.</pre>
+      </details>
+    </section>
+    <section>
+      <h2>Part details</h2>
+      <form id="detail-form">
+        <label for="part-id">Part ID</label>
+        <input id="part-id" type="number" min="1" step="1" required value="1" />
+        <button>Get part</button>
+      </form>
+      <p id="detail-status" role="status"></p>
+      <div id="detail"></div>
+      <details>
+        <summary>Item response</summary>
+        <pre id="detail-json">No request yet.</pre>
+      </details>
+    </section>
+    <script>
+      const base = new URL("./", location.href);
+      let page = 1;
+      const el = (id) => document.getElementById(id);
+      async function read(path, statusId, jsonId) {
+        const response = await fetch(new URL(path, base), {
+          headers: { Accept: "application/json" },
+        });
+        const body = await response.json();
+        el(statusId).textContent =
+          "GET " +
+          path +
+          " — " +
+          response.status +
+          " (" +
+          response.headers.get("content-type") +
+          ")";
+        el(jsonId).textContent = JSON.stringify(body, null, 2);
+        if (!response.ok) throw new Error(body.error || "Request failed");
+        return body;
+      }
+      async function loadParts() {
+        el("parts").replaceChildren();
+        el("previous").disabled = el("next").disabled = true;
+        el("list-status").textContent = "Loading parts…";
+        try {
+          const result = await read(
+            "parts?page=" + page,
+            "list-status",
+            "list-json",
+          );
+          if (!result.data.length)
+            el("list-status").textContent += " — No parts found.";
+          for (const part of result.data) {
+            const row = document.createElement("tr");
+            for (const value of [
+              part.id,
+              part.name,
+              part.category,
+              "$" + Number(part.price).toFixed(2),
+            ]) {
+              const cell = document.createElement("td");
+              cell.textContent = value;
+              row.append(cell);
+            }
+            const cell = document.createElement("td"),
+              button = document.createElement("button");
+            button.textContent = "View";
+            button.onclick = () => {
+              el("part-id").value = part.id;
+              loadPart();
+            };
+            cell.append(button);
+            row.append(cell);
+            el("parts").append(row);
+          }
+          el("previous").disabled = page <= 1;
+          el("next").disabled = page * result.pageSize >= result.total;
+        } catch (error) {
+          el("list-status").textContent += " — " + error.message;
+        }
+      }
+      async function loadPart() {
+        el("detail").replaceChildren();
+        el("detail-status").textContent = "Loading part…";
+        try {
+          const part = await read(
+            "parts/" + encodeURIComponent(el("part-id").value),
+            "detail-status",
+            "detail-json",
+          );
+          const fields = document.createElement("dl");
+          for (const [label, value] of Object.entries(part)) {
+            const term = document.createElement("dt"),
+              description = document.createElement("dd");
+            term.textContent = label;
+            description.textContent = value;
+            fields.append(term, description);
+          }
+          el("detail").append(fields);
+        } catch (error) {
+          el("detail-status").textContent += " — " + error.message;
+        }
+      }
+      el("load").onclick = () => {
+        page = 1;
+        loadParts();
+      };
+      el("previous").onclick = () => {
+        page--;
+        loadParts();
+      };
+      el("next").onclick = () => {
+        page++;
+        loadParts();
+      };
+      el("detail-form").onsubmit = (event) => {
+        event.preventDefault();
+        loadPart();
+      };
+      loadParts();
+    </script>
+  </body>
+</html>
