@@ -1,0 +1,247 @@
+[
+  {
+    "Method": "GET",
+    "Path": "/users",
+    "Expected": 200,
+    "Actual": 200,
+    "Body": "[{\"id\":1,\"first_name\":\"Sam\",\"last_name\":\"Lee\",\"email\":\"sam@example.com\"},{\"id\":2,\"first_name\":\"John\",\"last_name\":\"Smith\",\"email\":\"john@example.com\"}]"
+  },
+  {
+    "Method": "GET",
+    "Path": "/orders",
+    "Expected": 200,
+    "Actual": 200,
+    "Body": "[{\"id\":1,\"user_id\":1,\"status\":\"Processing\"},{\"id\":2,\"user_id\":2,\"status\":\"Delivered\"}]"
+  },
+  {
+    "Method": "GET",
+    "Path": "/users/2147483647",
+    "Expected": 404,
+    "Actual": 404,
+    "Body": "{\"error\":\"User not found\"}"
+  },
+  {
+    "Method": "GET",
+    "Path": "/orders/2147483647",
+    "Expected": 404,
+    "Actual": 404,
+    "Body": "{\"error\":\"Order not found\"}"
+  },
+  {
+    "Method": "POST",
+    "Path": "/users",
+    "Expected": 400,
+    "Actual": 400,
+    "Body": "{\"error\":\"First name, last name and email are required\"}"
+  },
+  {
+    "Method": "POST",
+    "Path": "/users",
+    "Expected": 400,
+    "Actual": 400,
+    "Body": "{\"error\":\"Invalid email\"}"
+  },
+  {
+    "Method": "POST",
+    "Path": "/orders",
+    "Expected": 400,
+    "Actual": 400,
+    "Body": "{\"error\":\"A positive integer user_id is required\"}"
+  },
+  {
+    "Method": "POST",
+    "Path": "/orders",
+    "Expected": 404,
+    "Actual": 404,
+    "Body": "{\"error\":\"User not found\"}"
+  },
+  {
+    "Method": "POST",
+    "Path": "/users",
+    "Expected": 201,
+    "Actual": 201,
+    "Body": "{\"message\":\"New user added\",\"id\":\"3\"}"
+  },
+  {
+    "Method": "GET",
+    "Path": "/users/3",
+    "Expected": 200,
+    "Actual": 200,
+    "Body": "{\"id\":3,\"first_name\":\"Build\",\"last_name\":\"Test\",\"email\":\"build-test-c653ee8747d640df951e32dfaf9da043@example.com\"}"
+  },
+  {
+    "Method": "POST",
+    "Path": "/users",
+    "Expected": 409,
+    "Actual": 409,
+    "Body": "{\"error\":\"Email already exists\"}"
+  },
+  {
+    "Method": "PATCH",
+    "Path": "/users/3",
+    "Expected": 400,
+    "Actual": 400,
+    "Body": "{\"error\":\"Invalid user fields\"}"
+  },
+  {
+    "Method": "PATCH",
+    "Path": "/users/3",
+    "Expected": 400,
+    "Actual": 400,
+    "Body": "{\"error\":\"Provide first_name, last_name or email only\"}"
+  },
+  {
+    "Method": "PATCH",
+    "Path": "/users/2147483647",
+    "Expected": 404,
+    "Actual": 404,
+    "Body": "{\"error\":\"User not found\"}"
+  },
+  {
+    "Method": "PATCH",
+    "Path": "/users/3",
+    "Expected": 200,
+    "Actual": 200,
+    "Body": "{\"message\":\"User updated successfully\"}"
+  },
+  {
+    "Method": "PATCH",
+    "Path": "/users/3",
+    "Expected": 200,
+    "Actual": 200,
+    "Body": "{\"message\":\"User updated successfully\"}"
+  },
+  {
+    "Method": "GET",
+    "Path": "/users/3",
+    "Expected": 200,
+    "Actual": 200,
+    "Body": "{\"id\":3,\"first_name\":\"Updated\",\"last_name\":\"Test\",\"email\":\"build-test-c653ee8747d640df951e32dfaf9da043@example.com\"}"
+  },
+  {
+    "Method": "POST",
+    "Path": "/orders",
+    "Expected": 400,
+    "Actual": 400,
+    "Body": "{\"error\":\"Invalid order status\"}"
+  },
+  {
+    "Method": "POST",
+    "Path": "/orders",
+    "Expected": 201,
+    "Actual": 201,
+    "Body": "{\"message\":\"New order added\",\"id\":\"4\"}"
+  },
+  {
+    "Method": "GET",
+    "Path": "/orders/4",
+    "Expected": 200,
+    "Actual": 200,
+    "Body": "{\"id\":4,\"user_id\":3,\"status\":\"Processing\"}"
+  },
+  {
+    "Method": "DELETE",
+    "Path": "/users/3",
+    "Expected": 409,
+    "Actual": 409,
+    "Body": "{\"error\":\"Cannot remove a user with orders\"}"
+  },
+  {
+    "Method": "PATCH",
+    "Path": "/orders/4",
+    "Expected": 400,
+    "Actual": 400,
+    "Body": "{\"error\":\"A valid status field is required\"}"
+  },
+  {
+    "Method": "PATCH",
+    "Path": "/orders/2147483647",
+    "Expected": 404,
+    "Actual": 404,
+    "Body": "{\"error\":\"Order not found\"}"
+  },
+  {
+    "Method": "PATCH",
+    "Path": "/orders/4",
+    "Expected": 200,
+    "Actual": 200,
+    "Body": "{\"message\":\"Order status updated successfully\"}"
+  },
+  {
+    "Method": "PATCH",
+    "Path": "/orders/4",
+    "Expected": 200,
+    "Actual": 200,
+    "Body": "{\"message\":\"Order status updated successfully\"}"
+  },
+  {
+    "Method": "GET",
+    "Path": "/orders/4",
+    "Expected": 200,
+    "Actual": 200,
+    "Body": "{\"id\":4,\"user_id\":3,\"status\":\"Shipped\"}"
+  },
+  {
+    "Method": "DELETE",
+    "Path": "/orders/1",
+    "Expected": 409,
+    "Actual": 409,
+    "Body": "{\"error\":\"Cannot remove an order with items; cancel it instead\"}"
+  },
+  {
+    "Method": "DELETE",
+    "Path": "/orders/4",
+    "Expected": 200,
+    "Actual": 200,
+    "Body": "{\"message\":\"Order removed successfully\"}"
+  },
+  {
+    "Method": "GET",
+    "Path": "/orders/4",
+    "Expected": 404,
+    "Actual": 404,
+    "Body": "{\"error\":\"Order not found\"}"
+  },
+  {
+    "Method": "DELETE",
+    "Path": "/users/3",
+    "Expected": 200,
+    "Actual": 200,
+    "Body": "{\"message\":\"User removed successfully\"}"
+  },
+  {
+    "Method": "GET",
+    "Path": "/users/3",
+    "Expected": 404,
+    "Actual": 404,
+    "Body": "{\"error\":\"User not found\"}"
+  },
+  {
+    "Method": "DELETE",
+    "Path": "/users/2147483647",
+    "Expected": 404,
+    "Actual": 404,
+    "Body": "{\"error\":\"User not found\"}"
+  },
+  {
+    "Method": "DELETE",
+    "Path": "/orders/2147483647",
+    "Expected": 404,
+    "Actual": 404,
+    "Body": "{\"error\":\"Order not found\"}"
+  },
+  {
+    "Method": "GET",
+    "Path": "/users",
+    "Expected": 200,
+    "Actual": 200,
+    "Body": "[{\"id\":1,\"first_name\":\"Sam\",\"last_name\":\"Lee\",\"email\":\"sam@example.com\"},{\"id\":2,\"first_name\":\"John\",\"last_name\":\"Smith\",\"email\":\"john@example.com\"}]"
+  },
+  {
+    "Method": "GET",
+    "Path": "/orders",
+    "Expected": 200,
+    "Actual": 200,
+    "Body": "[{\"id\":1,\"user_id\":1,\"status\":\"Processing\"},{\"id\":2,\"user_id\":2,\"status\":\"Delivered\"}]"
+  }
+]

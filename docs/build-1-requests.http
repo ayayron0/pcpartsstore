@@ -1,0 +1,53 @@
+@baseUrl = http://localhost/pcpartsstore
+
+### Populated list — expect 200, two seed rows
+GET {{baseUrl}}/parts
+Accept: application/json
+
+### Existing part — expect 200, ID 1
+GET {{baseUrl}}/parts/1
+Accept: application/json
+
+### Missing part — expect 404
+GET {{baseUrl}}/parts/999999
+Accept: application/json
+
+### Brand list — expect 200
+GET {{baseUrl}}/brands
+Accept: application/json
+
+### Existing brand — expect 200
+GET {{baseUrl}}/brands/1
+Accept: application/json
+
+### Empty list — select isolated empty fixture first; restore normal config afterward
+GET {{baseUrl}}/parts
+Accept: application/json
+
+### Users list
+GET {{baseUrl}}/users
+Accept: application/json
+
+### Individual user
+GET {{baseUrl}}/users/1
+Accept: application/json
+
+### Orders list
+GET {{baseUrl}}/orders
+Accept: application/json
+
+### Individual order
+GET {{baseUrl}}/orders/1
+Accept: application/json
+
+### Create a temporary user (save returned ID; delete after demo)
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{"first_name":"Demo","last_name":"Customer","email":"demo.customer@example.com"}
+
+### Create an order (replace user_id with the newly created user ID)
+POST {{baseUrl}}/orders
+Content-Type: application/json
+
+{"user_id":3,"status":"Processing"}

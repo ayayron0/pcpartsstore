@@ -1,1 +1,2 @@
 /backend/vendor/
+/src/config/database.local.php
