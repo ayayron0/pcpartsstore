@@ -1,141 +1,158 @@
 openapi: 3.0.3
-
 info:
-  title: PC Parts Store API
+  title: DoubleBolt API
   version: 1.0.0
-  description: An API for managing PC parts, users, orders, and brands.
-
+  description: >-
+    Database-backed reads and existing parts/brands write handlers, plus users/orders CRUD.
+    Cart, checkout, inventory administration and authentication remain planned.
 servers:
-  - url: http://localhost:8080/api/v1
-    description: Local Development Server
-
+  - url: http://localhost/pcpartsstore
+    description: Wampoon; adjust port to match Apache.
 paths:
   /parts:
     get:
-      summary: Get all PC parts
+      summary: List PC parts
       parameters:
         - in: query
-          name: brand
-          required: false
-          schema:
-            type: string
-          description: Filter parts by brand
+          name: category
+          schema: {type: string}
+        - in: query
+          name: brand_id
+          schema: {type: integer, minimum: 1}
+        - in: query
+          name: page
+          schema: {type: integer, minimum: 1, maximum: 100, default: 1}
       responses:
         '200':
-          description: A list of PC parts
+          description: Populated or empty collection; two rows per page.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartList'
+              examples:
+                populated:
+                  value:
+                    data:
+                      - {id: 1, name: GeForce RTX 5070, category: GPU, brand_id: 1, price: '749.99'}
+                      - {id: 2, name: Radeon RX 8800 XT, category: GPU, brand_id: 2, price: '699.99'}
+                    page: 1
+                    pageSize: 2
+                    total: 2
+                empty:
+                  value: {data: [], page: 1, pageSize: 2, total: 0}
+        '400':
+          description: Invalid query parameter, pagination or brand ID.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post: {"summary": "Create part (existing handler)", "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "required": ["name", "category", "brand_id", "price"], "properties": {"name": {"type": "string"}, "category": {"type": "string"}, "brand_id": {"type": "integer"}, "price": {"type": "number"}}}}}}, "responses": {"201": {"description": "Created", "content": {"application/json": {"schema": {"type": "object", "required": ["message", "id"], "properties": {"message": {"type": "string"}, "id": {"type": "string", "description": "PDO lastInsertId returns a string"}}}}}}, "400": {"description": "Missing required fields", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}
+  /parts/{id}:
+    get:
+      summary: Read one PC part
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: integer, minimum: 1}
+          example: 1
+      responses:
+        '200':
+          description: Existing database row.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Part'
+              example: {id: 1, name: GeForce RTX 5070, category: GPU, brand_id: 1, price: '749.99'}
+        '404':
+          description: Unknown part ID.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example: {error: PC part not found}
+    patch: {"summary": "Update part price (existing handler)", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "required": ["price"], "properties": {"price": {"type": "number"}}}}}}, "responses": {"200": {"description": "Updated", "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}}, "400": {"description": "Missing required field", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}, "404": {"description": "No rows changed, including unknown ID or unchanged value", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}
+    delete: {"summary": "Delete part (existing handler)", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}}], "responses": {"200": {"description": "Deleted", "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}}, "404": {"description": "Not found", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}
+  /brands:
+    get:
+      summary: List brands
+      responses:
+        '200':
+          description: Brand rows, or an empty array.
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Part'
-
-    post:
-      summary: Add a new PC part
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Part'
-      responses:
-        '201':
-          description: PC part successfully created
-
-  /parts/{id}:
+                  $ref: '#/components/schemas/Brand'
+              example: [{id: 1, name: NVIDIA}, {id: 2, name: AMD}]
+    post: {"summary": "Create brand (existing handler)", "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "required": ["name"], "properties": {"name": {"type": "string"}}}}}}, "responses": {"201": {"description": "Created", "content": {"application/json": {"schema": {"type": "object", "required": ["message", "id"], "properties": {"message": {"type": "string"}, "id": {"type": "string", "description": "PDO lastInsertId returns a string"}}}}}}, "400": {"description": "Missing required fields", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}
+  /brands/{id}:
     get:
-      summary: Get a specific PC part
+      summary: Read one brand
       parameters:
         - in: path
           name: id
           required: true
-          schema:
-            type: integer
+          schema: {type: integer, minimum: 1}
       responses:
         '200':
-          description: A single PC part
+          description: Existing brand.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Part'
+                $ref: '#/components/schemas/Brand'
+              example: {id: 1, name: NVIDIA}
         '404':
-          description: PC part not found
-
-    put:
-      summary: Update a specific PC part
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Part'
-      responses:
-        '200':
-          description: PC part successfully updated
-
-    delete:
-      summary: Delete a specific PC part
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-      responses:
-        '204':
-          description: PC part successfully deleted
-
+          description: Unknown brand ID.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example: {error: Brand not found}
+    patch: {"summary": "Update brand name (existing handler)", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "required": ["name"], "properties": {"name": {"type": "string"}}}}}}, "responses": {"200": {"description": "Updated", "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}}, "400": {"description": "Missing required field", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}, "404": {"description": "No rows changed, including unknown ID or unchanged value", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}
+    delete: {"summary": "Delete brand (existing handler)", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}}], "responses": {"200": {"description": "Deleted", "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}}, "404": {"description": "Not found", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}
+  /users:
+    {"get": {"summary": "List users", "responses": {"200": {"description": "Collection, possibly empty", "content": {"application/json": {"schema": {"type": "array", "items": {"type": "object", "required": ["id", "first_name", "last_name", "email"], "properties": {"id": {"type": "integer"}, "first_name": {"type": "string", "maxLength": 100}, "last_name": {"type": "string", "maxLength": 100}, "email": {"type": "string", "format": "email", "maxLength": 255}}}}}}}}}, "post": {"summary": "Create user", "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "required": ["first_name", "last_name", "email"], "properties": {"first_name": {"type": "string", "maxLength": 100}, "last_name": {"type": "string", "maxLength": 100}, "email": {"type": "string", "format": "email", "maxLength": 255}}}}}}, "responses": {"201": {"description": "Created", "content": {"application/json": {"schema": {"type": "object", "required": ["message", "id"], "properties": {"message": {"type": "string"}, "id": {"type": "string", "description": "PDO lastInsertId returns a string"}}}}}}, "400": {"description": "Invalid JSON or fields", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}, "409": {"description": "Email already exists", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}}
+  /users/{id}:
+    {"parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}}], "get": {"summary": "Read user", "responses": {"200": {"description": "Existing row", "content": {"application/json": {"schema": {"type": "object", "required": ["id", "first_name", "last_name", "email"], "properties": {"id": {"type": "integer"}, "first_name": {"type": "string", "maxLength": 100}, "last_name": {"type": "string", "maxLength": 100}, "email": {"type": "string", "format": "email", "maxLength": 255}}}}}}, "404": {"description": "Not found", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}, "patch": {"summary": "Update user", "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "additionalProperties": false, "minProperties": 1, "properties": {"first_name": {"type": "string", "maxLength": 100}, "last_name": {"type": "string", "maxLength": 100}, "email": {"type": "string", "format": "email", "maxLength": 255}}}}}}, "responses": {"200": {"description": "Updated, including unchanged values", "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}}, "400": {"description": "Invalid JSON or fields", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}, "404": {"description": "Not found", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}, "409": {"description": "Email already exists", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}, "delete": {"summary": "Delete user", "responses": {"200": {"description": "Deleted", "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}}, "404": {"description": "Not found", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}, "409": {"description": "Linked orders prevent user deletion", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}}
+  /orders:
+    {"get": {"summary": "List orders", "responses": {"200": {"description": "Collection, possibly empty", "content": {"application/json": {"schema": {"type": "array", "items": {"type": "object", "required": ["id", "user_id", "status"], "properties": {"id": {"type": "integer"}, "user_id": {"type": "integer"}, "status": {"type": "string", "enum": ["Processing", "Shipped", "Delivered", "Cancelled"]}}}}}}}}}, "post": {"summary": "Create order", "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "required": ["user_id"], "properties": {"user_id": {"type": "integer"}, "status": {"type": "string", "enum": ["Processing", "Shipped", "Delivered", "Cancelled"], "default": "Processing"}}}}}}, "responses": {"201": {"description": "Created", "content": {"application/json": {"schema": {"type": "object", "required": ["message", "id"], "properties": {"message": {"type": "string"}, "id": {"type": "string", "description": "PDO lastInsertId returns a string"}}}}}}, "400": {"description": "Invalid JSON or fields", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}, "404": {"description": "Referenced user not found", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}}
+  /orders/{id}:
+    {"parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}}], "get": {"summary": "Read order", "responses": {"200": {"description": "Existing row", "content": {"application/json": {"schema": {"type": "object", "required": ["id", "user_id", "status"], "properties": {"id": {"type": "integer"}, "user_id": {"type": "integer"}, "status": {"type": "string", "enum": ["Processing", "Shipped", "Delivered", "Cancelled"]}}}}}}, "404": {"description": "Not found", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}, "patch": {"summary": "Update order", "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "additionalProperties": false, "minProperties": 1, "properties": {"status": {"type": "string", "enum": ["Processing", "Shipped", "Delivered", "Cancelled"], "default": "Processing"}}, "required": ["status"]}}}}, "responses": {"200": {"description": "Updated, including unchanged values", "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}}, "400": {"description": "Invalid JSON or fields", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}, "404": {"description": "Not found", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}, "delete": {"summary": "Delete order", "responses": {"200": {"description": "Deleted", "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}}, "404": {"description": "Not found", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}, "409": {"description": "Linked items prevent order deletion; cancel instead", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}}
 components:
   schemas:
     Part:
       type: object
+      required: [id, name, category, brand_id, price]
       properties:
-        id:
-          type: integer
-          example: 1
-        name:
-          type: string
-          example: "GeForce RTX 5070"
-        category:
-          type: string
-          example: "GPU"
-        brand:
-          type: string
-          example: "NVIDIA"
+        id: {type: integer, example: 1}
+        name: {type: string, example: GeForce RTX 5070}
+        category: {type: string, example: GPU}
+        brand_id: {type: integer, example: 1}
         price:
-          type: number
-          example: 749.99
-
-    User:
+          type: string
+          description: MariaDB DECIMAL returned by PDO as a string.
+          example: '749.99'
+    PartList:
       type: object
+      required: [data, page, pageSize, total]
       properties:
-        id:
-          type: integer
-        name:
-          type: string
-        email:
-          type: string
-
-    Order:
-      type: object
-      properties:
-        id:
-          type: integer
-        userId:
-          type: integer
-        status:
-          type: string
-
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Part'
+        page: {type: integer, example: 1}
+        pageSize: {type: integer, example: 2}
+        total: {type: integer, example: 2}
     Brand:
       type: object
+      required: [id, name]
       properties:
-        id:
-          type: integer
-        name:
-          type: string
+        id: {type: integer}
+        name: {type: string}
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: {type: string}

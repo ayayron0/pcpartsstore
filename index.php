@@ -12,6 +12,8 @@ $app->setBasePath('/pcpartsstore');
 
 require __DIR__ . '/src/routes/brands.php';
 require __DIR__ . '/src/routes/parts.php';
+require __DIR__ . '/src/routes/users.php';
+require __DIR__ . '/src/routes/orders.php';
 
 $app->get('/', function (Request $request, Response $response) {
     $response->getBody()->write(
