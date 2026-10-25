@@ -102,10 +102,8 @@ $app->get('/parts', function (Request $request, Response $response) use ($pdo) {
     $pageSql = "SELECT * FROM parts $whereSql ORDER BY id ASC LIMIT :limit OFFSET :offset";
 
     $stmt = $pdo->prepare($pageSql);
-    foreach ($executeParams as $key => $value) {
-        $stmt->bindValue(':' . $key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
-    }
-    $stmt->execute();
+    
+    $stmt->execute($executeParams);
 
     $parts = $stmt->fetchAll();
 
