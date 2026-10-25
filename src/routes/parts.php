@@ -21,12 +21,14 @@ $app->get('/parts', function (Request $request, Response $response) use ($pdo) {
 
 
     // GET category, brand_id and page from query parameter using _GET super-global variable
+    // 1. Extract Pagination Params (with sensible defaults)
+    $page = (int) ($_GET['page'] ?? 1);
+    $limit = (int) ($_GET['limit'] ?? 5);
     $category = $_GET['category'] ?? null;
-    $page = $_GET['page'] ?? 1;
     $brand_id = $_GET['brand_id'] ?? null;
 
     // Invalid query parameters validation
-    $allowedParams = ['category', 'page', 'brand_id'];
+    $allowedParams = ['page', 'limit', 'category', 'brand_id'];
 
     foreach ($_GET as $key => $value) {
         if (!in_array($key, $allowedParams)) {
@@ -41,6 +43,16 @@ $app->get('/parts', function (Request $request, Response $response) use ($pdo) {
     }
 
     // Pagination validation
+    // Enforce boundaries (prevent negative numbers or massive limits)
+    if ($page < 1) $page = 1;
+    if ($limit < 1) $limit = 5;
+    if ($limit > 50) $limit = 50; // Max 50 items per page
+    $offset = ($page - 1) * $limit;
+    $brand_id = $brand_id !== null ? (int) $brand_id : null;
+
+    // $page = (int)$page;
+    // $limit = 5;
+
     if (!is_numeric($page) || $page < 1 || $page > 100) {
         $response->getBody()->write(
             json_encode(['error' => 'Invalid pagination'])
@@ -52,7 +64,7 @@ $app->get('/parts', function (Request $request, Response $response) use ($pdo) {
     }
 
     // Brand ID validation
-    if ($brand_id !== null && (!is_numeric($brand_id) || (int)$brand_id < 1)) {
+    if ($brand_id !== null && (!is_numeric($brand_id) || (int) $brand_id < 1)) {
         $response->getBody()->write(
             json_encode(['error' => 'Invalid brand ID'])
         );
@@ -62,57 +74,55 @@ $app->get('/parts', function (Request $request, Response $response) use ($pdo) {
             ->withHeader('Content-Type', 'application/json');
     }
 
-    $page = (int)$page;
-    $pageSize = 2;
-    $offset = ($page - 1) * $pageSize;
-    $brand_id = $brand_id !== null ? (int)$brand_id : null;
-
+    // 2. Build Dynamic Filtering (WHERE clauses)
     $whereClauses = [];
-    $executeParams = [];
+    $queryParams = [];
 
     if (isset($category)) {
         $whereClauses[] = "category = :category";
-        $executeParams['category'] = $category;
+        $queryParams['category'] = $category;
     }
 
     if (isset($brand_id)) {
         $whereClauses[] = "brand_id = :brand_id";
-        $executeParams['brand_id'] = $brand_id;
+        $queryParams['brand_id'] = $brand_id;
     }
 
-    $whereSql = count($whereClauses) > 0 ? "WHERE " . implode(" AND ", $whereClauses) : "";
+    // Combine WHERE clauses if any exist
+    $whereSql = "";
+    if (count($whereClauses) > 0) {
+        $whereSql = "WHERE " . implode(" AND ", $whereClauses);
+    }
+    // $whereSql = count($whereClauses) > 0 ? "WHERE " . implode(" AND ", $whereClauses) : "";
 
-    // Count total number of matching parts
+    // 3. Get Total Count (for metadata)s
     $countSql = "SELECT COUNT(*) AS total FROM parts $whereSql";
+    $countStmt = $pdo->prepare($countSql);
+    $countStmt->execute($queryParams);
+    $totalItems = (int)$countStmt->fetchColumn();
+    $totalPages = ceil($totalItems / $limit);
 
-    if (count($executeParams) > 0) {
-        $_stmt = $pdo->prepare($countSql);
-        $_stmt->execute($executeParams);
-    } else {
-        $_stmt = $pdo->query($countSql);
-    }
+    // 4. Fetch the Paginated Data
+    $dataSql = "SELECT * FROM parts $whereSql ORDER BY id ASC LIMIT :limit OFFSET :offset";
+    $dataStmt = $pdo->prepare($dataSql);
 
-    $count = $_stmt->fetch();
-    $total = (int)$count['total'];
+    // Bind filter and pagination parameters
+    $dataStmt->execute(array_merge($queryParams, [
+        'limit' => $limit,
+        'offset' => $offset,
+    ]));
+    $parts = $dataStmt->fetchAll();
 
-    // Pagination logic
-    $executeParams['limit'] = $pageSize;
-    $executeParams['offset'] = $offset;
-
-    $pageSql = "SELECT * FROM parts $whereSql ORDER BY id ASC LIMIT :limit OFFSET :offset";
-
-    $stmt = $pdo->prepare($pageSql);
-    
-    $stmt->execute($executeParams);
-
-    $parts = $stmt->fetchAll();
-
+    // 5. Return Enveloped Response
     $response->getBody()->write(
         json_encode([
-            'data'     => $parts,
-            'page'     => $page,
-            'pageSize' => $pageSize,
-            'total'    => $total
+            "metadata" => [
+                "total_items" => $totalItems,
+                "total_pages" => $totalPages,
+                "current_page" => $page,
+                "per_page" => $limit
+            ],
+            "data" => $parts
         ])
     );
 
@@ -121,11 +131,7 @@ $app->get('/parts', function (Request $request, Response $response) use ($pdo) {
         ->withHeader('Content-Type', 'application/json');
 });
 
-$app->get('/parts/{id}', function (
-    Request $request,
-    Response $response,
-    array $args
-) use ($pdo) {
+$app->get('/parts/{id}', function (Request $request, Response $response, array $args) use ($pdo) {
     $stmt = $pdo->prepare(
         "SELECT * FROM parts WHERE id = :id"
     );
@@ -154,6 +160,7 @@ $app->get('/parts/{id}', function (
     );
 
     return $response
+        ->withStatus(200)
         ->withHeader('Content-Type', 'application/json');
 });
 

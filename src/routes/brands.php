@@ -8,23 +8,109 @@ use Slim\App;
 /** @var PDO $pdo */
 
 $app->get('/brands', function (Request $request, Response $response) use ($pdo) {
-    $stmt = $pdo->query("SELECT * FROM brands");
+    // $stmt = $pdo->query("SELECT * FROM brands");
 
-    $brands = $stmt->fetchAll();
+    // $brands = $stmt->fetchAll();
 
+    // $response->getBody()->write(
+    //     json_encode($brands)
+    // );
+
+    // return $response
+    //     ->withHeader('Content-Type', 'application/json');
+
+    // 1. Extract Pagination Params (with sensible defaults)
+    $page = (int) ($_GET['page'] ?? 1);
+    $limit = (int) ($_GET['limit'] ?? 5);
+    $name = $_GET['name'] ?? null;
+
+    // Invalid query parameters validation
+    $allowedParams = ['page', 'limit', 'name'];
+
+    foreach ($_GET as $key => $value) {
+        if (!in_array($key, $allowedParams)) {
+            $response->getBody()->write(
+                json_encode(['error' => 'Invalid query parameter'])
+            );
+
+            return $response
+                ->withStatus(400)
+                ->withHeader('Content-Type', 'application/json');
+        }
+    }
+
+    // Pagination validation
+    // Enforce boundaries (prevent negative numbers or massive limits)
+    if ($page < 1) $page = 1;
+    if ($limit < 1) $limit = 5;
+    if ($limit > 50) $limit = 50; // Max 50 items per page
+    $offset = ($page - 1) * $limit;
+
+    // $page = (int)$page;
+    // $limit = 5;
+
+    if (!is_numeric($page) || $page < 1 || $page > 100) {
+        $response->getBody()->write(
+            json_encode(['error' => 'Invalid pagination'])
+        );
+
+        return $response
+            ->withStatus(400)
+            ->withHeader('Content-Type', 'application/json');
+    }
+
+    // 2. Build Dynamic Filtering (WHERE clauses)
+    $whereClauses = [];
+    $queryParams = [];
+
+    if (!empty($name)) {
+        $whereClauses[] = "name LIKE :name";
+        $queryParams['name'] = "%" . $name . "%";
+    }
+
+    // Combine WHERE clauses if any exist
+    $whereSql = "";
+    if (count($whereClauses) > 0) {
+        $whereSql = "WHERE " . implode(" AND ", $whereClauses);
+    }
+
+    // 3. Get Total Count (for metadata)s
+    $countSql = "SELECT COUNT(*) AS total FROM brands $whereSql";
+    $countStmt = $pdo->prepare($countSql);
+    $countStmt->execute($queryParams);
+    $totalItems = (int)$countStmt->fetchColumn();
+    $totalPages = ceil($totalItems / $limit);
+
+    // 4. Fetch the Paginated Data
+    $dataSql = "SELECT * FROM brands $whereSql ORDER BY id ASC LIMIT :limit OFFSET :offset";
+    $dataStmt = $pdo->prepare($dataSql);
+
+    // Bind filter and pagination parameters
+    $dataStmt->execute(array_merge($queryParams, [
+        'limit' => $limit,
+        'offset' => $offset
+    ]));
+    $parts = $dataStmt->fetchAll();
+
+    // 5. Return Enveloped Response
     $response->getBody()->write(
-        json_encode($brands)
+        json_encode([
+            "metadata" => [
+                "total_items" => $totalItems,
+                "total_pages" => $totalPages,
+                "current_page" => $page,
+                "per_page" => $limit
+            ],
+            "data" => $parts
+        ])
     );
 
     return $response
+        ->withStatus(200)
         ->withHeader('Content-Type', 'application/json');
 });
 
-$app->get('/brands/{id}', function (
-    Request $request,
-    Response $response,
-    array $args
-) use ($pdo) {
+$app->get('/brands/{id}', function (Request $request, Response $response, array $args) use ($pdo) {
     $stmt = $pdo->prepare(
         "SELECT * FROM brands WHERE id = :id"
     );
@@ -53,6 +139,7 @@ $app->get('/brands/{id}', function (
     );
 
     return $response
+        ->withStatus(200)
         ->withHeader('Content-Type', 'application/json');
 });
 
