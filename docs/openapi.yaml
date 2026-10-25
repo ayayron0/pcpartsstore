@@ -1,8 +1,8 @@
-openapi: 3.0.3
+openapi: 3.2.1
 info:
   title: DoubleBolt API
   version: 1.0.0
-  description: >-
+  description:
     Database-backed reads and existing parts/brands write handlers, plus users/orders CRUD.
     Cart, checkout, inventory administration and authentication remain planned.
 servers:
@@ -15,144 +15,1118 @@ paths:
       parameters:
         - in: query
           name: category
-          schema: {type: string}
+          required: false
+          description: Filter by part category.
+          schema:
+            type: string
         - in: query
           name: brand_id
-          schema: {type: integer, minimum: 1}
+          required: false
+          description: Filter by brand ID.
+          schema:
+            type: integer
+            minimum: 1
         - in: query
           name: page
-          schema: {type: integer, minimum: 1, maximum: 100, default: 1}
+          required: false
+          description: Page number (1-based).
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: limit
+          required: false
+          description: Items per page; maximum 50.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 5
       responses:
-        '200':
-          description: Populated or empty collection; two rows per page.
+        "200":
+          description: Paginated parts collection.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PartList'
+                $ref: "#/components/schemas/PartList"
               examples:
                 populated:
                   value:
+                    metadata:
+                      total_items: 2
+                      total_pages: 1
+                      current_page: 1
+                      per_page: 5
                     data:
-                      - {id: 1, name: GeForce RTX 5070, category: GPU, brand_id: 1, price: '749.99'}
-                      - {id: 2, name: Radeon RX 8800 XT, category: GPU, brand_id: 2, price: '699.99'}
-                    page: 1
-                    pageSize: 2
-                    total: 2
+                      - id: 1
+                        name: GeForce RTX 5070
+                        category: GPU
+                        brand_id: 1
+                        price: "749.99"
+                      - id: 2
+                        name: Radeon RX 8800 XT
+                        category: GPU
+                        brand_id: 2
+                        price: "699.99"
                 empty:
-                  value: {data: [], page: 1, pageSize: 2, total: 0}
-        '400':
-          description: Invalid query parameter, pagination or brand ID.
+                  value:
+                    metadata:
+                      total_items: 0
+                      total_pages: 0
+                      current_page: 1
+                      per_page: 5
+                    data: []
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+    post:
+      summary: Create part (existing handler)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - category
+                - brand_id
+                - price
+              properties:
+                name:
+                  type: string
+                  example: Core i7-14700K
+                category:
+                  type: string
+                  example: CPU
+                brand_id:
+                  type: integer
+                  example: 3
+                price:
+                  type: number
+                  example: 481.96
+      responses:
+        "201":
+          description: Created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-    post: {"summary": "Create part (existing handler)", "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "required": ["name", "category", "brand_id", "price"], "properties": {"name": {"type": "string"}, "category": {"type": "string"}, "brand_id": {"type": "integer"}, "price": {"type": "number"}}}}}}, "responses": {"201": {"description": "Created", "content": {"application/json": {"schema": {"type": "object", "required": ["message", "id"], "properties": {"message": {"type": "string"}, "id": {"type": "string", "description": "PDO lastInsertId returns a string"}}}}}}, "400": {"description": "Missing required fields", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}
+                type: object
+                required:
+                  - message
+                  - id
+                properties:
+                  message:
+                    type: string
+                    example: New PC part added
+                  id:
+                    type: integer
+                    example: 3
+                    description: PDO lastInsertId returns a string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /parts/{id}:
     get:
       summary: Read one PC part
       parameters:
-        - in: path
-          name: id
+        - name: id
+          in: path
           required: true
-          schema: {type: integer, minimum: 1}
-          example: 1
+          schema:
+            type: integer
+            minimum: 1
       responses:
-        '200':
+        "200":
           description: Existing database row.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Part'
-              example: {id: 1, name: GeForce RTX 5070, category: GPU, brand_id: 1, price: '749.99'}
-        '404':
-          description: Unknown part ID.
+                $ref: "#/components/schemas/Part"
+              example:
+                id: 1
+                name: GeForce RTX 5070
+                category: GPU
+                brand_id: 1
+                price: "749.99"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+    patch:
+      summary: Update part price (existing handler)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - price
+              properties:
+                price:
+                  type: number
+                  example: 425.82
+      responses:
+        "200":
+          description: Updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-              example: {error: PC part not found}
-    patch: {"summary": "Update part price (existing handler)", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "required": ["price"], "properties": {"price": {"type": "number"}}}}}}, "responses": {"200": {"description": "Updated", "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}}, "400": {"description": "Missing required field", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}, "404": {"description": "No rows changed, including unknown ID or unchanged value", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}
-    delete: {"summary": "Delete part (existing handler)", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}}], "responses": {"200": {"description": "Deleted", "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}}, "404": {"description": "Not found", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: PC part's price updated successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+    delete:
+      summary: Delete part (existing handler)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: PC part removed successfully
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+    put:
+      summary: Replace a part
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - category
+                - brand_id
+                - price
+              properties:
+                name:
+                  type: string
+                  example: Ryzen 7 9800X3D
+                category:
+                  type: string
+                  example: CPU
+                brand_id:
+                  type: integer
+                  example: 2
+                  minimum: 1
+                price:
+                  type: number
+                  example: 596.98
+                  minimum: 0
+      responses:
+        "200":
+          description: Updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: PC part has been updated successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /brands:
     get:
       summary: List brands
+      parameters:
+        - in: query
+          name: name
+          required: false
+          description: Filter by brand name.
+          schema:
+            type: string
+        - in: query
+          name: page
+          required: false
+          description: Page number (1-based).
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: limit
+          required: false
+          description: Items per page; maximum 50.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 5
       responses:
-        '200':
-          description: Brand rows, or an empty array.
+        "200":
+          description: Paginated brands collection.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandList"
+              examples:
+                populated:
+                  value:
+                    metadata:
+                      total_items: 2
+                      total_pages: 1
+                      current_page: 1
+                      per_page: 5
+                    data:
+                      - id: 1
+                        name: NVIDIA
+                      - id: 2
+                        name: AMD
+              empty:
+                value:
+                  metadata:
+                    total_items: 0
+                    total_pages: 0
+                    current_page: 1
+                    per_page: 5
+                  data: []
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+    post:
+      summary: Create brand (existing handler)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  example: ASUS
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - id
+                properties:
+                  message:
+                    type: string
+                    example: New brand added
+                  id:
+                    type: string
+                    example: 5
+                    description: PDO lastInsertId returns a string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /brands/{id}:
+    get:
+      summary: Read one brand
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Existing brand.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Brand"
+              example:
+                id: 1
+                name: NVIDIA
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+    patch:
+      summary: Update brand name (existing handler)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  example: Corsair
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Brand name updated successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+    delete:
+      summary: Delete brand (existing handler)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Brand removed successfully
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+    put:
+      summary: Replace a brand
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  example: Crucial
+      responses:
+        "200":
+          description: Updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Brand has been updated successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /users:
+    get:
+      summary: List users
+      responses:
+        "200":
+          description: Collection, possibly empty
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Brand'
-              example: [{id: 1, name: NVIDIA}, {id: 2, name: AMD}]
-    post: {"summary": "Create brand (existing handler)", "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "required": ["name"], "properties": {"name": {"type": "string"}}}}}}, "responses": {"201": {"description": "Created", "content": {"application/json": {"schema": {"type": "object", "required": ["message", "id"], "properties": {"message": {"type": "string"}, "id": {"type": "string", "description": "PDO lastInsertId returns a string"}}}}}}, "400": {"description": "Missing required fields", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}
-  /brands/{id}:
-    get:
-      summary: Read one brand
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: {type: integer, minimum: 1}
+                  type: object
+                  required:
+                    - id
+                    - first_name
+                    - last_name
+                    - email
+                  properties:
+                    id:
+                      type: integer
+                    first_name:
+                      type: string
+                      maxLength: 100
+                    last_name:
+                      type: string
+                      maxLength: 100
+                    email:
+                      type: string
+                      format: email
+                      maxLength: 255
+    post:
+      summary: Create user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - first_name
+                - last_name
+                - email
+              properties:
+                first_name:
+                  type: string
+                  maxLength: 100
+                last_name:
+                  type: string
+                  maxLength: 100
+                email:
+                  type: string
+                  format: email
+                  maxLength: 255
       responses:
-        '200':
-          description: Existing brand.
+        "201":
+          description: Created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Brand'
-              example: {id: 1, name: NVIDIA}
-        '404':
-          description: Unknown brand ID.
+                type: object
+                required:
+                  - message
+                  - id
+                properties:
+                  message:
+                    type: string
+                  id:
+                    type: string
+                    description: PDO lastInsertId returns a string
+        "400":
+          description: Invalid JSON or fields
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-              example: {error: Brand not found}
-    patch: {"summary": "Update brand name (existing handler)", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "required": ["name"], "properties": {"name": {"type": "string"}}}}}}, "responses": {"200": {"description": "Updated", "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}}, "400": {"description": "Missing required field", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}, "404": {"description": "No rows changed, including unknown ID or unchanged value", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}
-    delete: {"summary": "Delete brand (existing handler)", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}}], "responses": {"200": {"description": "Deleted", "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}}, "404": {"description": "Not found", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}
-  /users:
-    {"get": {"summary": "List users", "responses": {"200": {"description": "Collection, possibly empty", "content": {"application/json": {"schema": {"type": "array", "items": {"type": "object", "required": ["id", "first_name", "last_name", "email"], "properties": {"id": {"type": "integer"}, "first_name": {"type": "string", "maxLength": 100}, "last_name": {"type": "string", "maxLength": 100}, "email": {"type": "string", "format": "email", "maxLength": 255}}}}}}}}}, "post": {"summary": "Create user", "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "required": ["first_name", "last_name", "email"], "properties": {"first_name": {"type": "string", "maxLength": 100}, "last_name": {"type": "string", "maxLength": 100}, "email": {"type": "string", "format": "email", "maxLength": 255}}}}}}, "responses": {"201": {"description": "Created", "content": {"application/json": {"schema": {"type": "object", "required": ["message", "id"], "properties": {"message": {"type": "string"}, "id": {"type": "string", "description": "PDO lastInsertId returns a string"}}}}}}, "400": {"description": "Invalid JSON or fields", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}, "409": {"description": "Email already exists", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}}
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
+        "409":
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
   /users/{id}:
-    {"parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}}], "get": {"summary": "Read user", "responses": {"200": {"description": "Existing row", "content": {"application/json": {"schema": {"type": "object", "required": ["id", "first_name", "last_name", "email"], "properties": {"id": {"type": "integer"}, "first_name": {"type": "string", "maxLength": 100}, "last_name": {"type": "string", "maxLength": 100}, "email": {"type": "string", "format": "email", "maxLength": 255}}}}}}, "404": {"description": "Not found", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}, "patch": {"summary": "Update user", "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "additionalProperties": false, "minProperties": 1, "properties": {"first_name": {"type": "string", "maxLength": 100}, "last_name": {"type": "string", "maxLength": 100}, "email": {"type": "string", "format": "email", "maxLength": 255}}}}}}, "responses": {"200": {"description": "Updated, including unchanged values", "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}}, "400": {"description": "Invalid JSON or fields", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}, "404": {"description": "Not found", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}, "409": {"description": "Email already exists", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}, "delete": {"summary": "Delete user", "responses": {"200": {"description": "Deleted", "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}}, "404": {"description": "Not found", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}, "409": {"description": "Linked orders prevent user deletion", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}}
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    get:
+      summary: Read user
+      responses:
+        "200":
+          description: Existing row
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - first_name
+                  - last_name
+                  - email
+                properties:
+                  id:
+                    type: integer
+                  first_name:
+                    type: string
+                    maxLength: 100
+                  last_name:
+                    type: string
+                    maxLength: 100
+                  email:
+                    type: string
+                    format: email
+                    maxLength: 255
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
+    patch:
+      summary: Update user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              minProperties: 1
+              properties:
+                first_name:
+                  type: string
+                  maxLength: 100
+                last_name:
+                  type: string
+                  maxLength: 100
+                email:
+                  type: string
+                  format: email
+                  maxLength: 255
+      responses:
+        "200":
+          description: Updated, including unchanged values
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "400":
+          description: Invalid JSON or fields
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
+        "409":
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
+    delete:
+      summary: Delete user
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
+        "409":
+          description: Linked orders prevent user deletion
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
   /orders:
-    {"get": {"summary": "List orders", "responses": {"200": {"description": "Collection, possibly empty", "content": {"application/json": {"schema": {"type": "array", "items": {"type": "object", "required": ["id", "user_id", "status"], "properties": {"id": {"type": "integer"}, "user_id": {"type": "integer"}, "status": {"type": "string", "enum": ["Processing", "Shipped", "Delivered", "Cancelled"]}}}}}}}}}, "post": {"summary": "Create order", "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "required": ["user_id"], "properties": {"user_id": {"type": "integer"}, "status": {"type": "string", "enum": ["Processing", "Shipped", "Delivered", "Cancelled"], "default": "Processing"}}}}}}, "responses": {"201": {"description": "Created", "content": {"application/json": {"schema": {"type": "object", "required": ["message", "id"], "properties": {"message": {"type": "string"}, "id": {"type": "string", "description": "PDO lastInsertId returns a string"}}}}}}, "400": {"description": "Invalid JSON or fields", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}, "404": {"description": "Referenced user not found", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}}
+    get:
+      summary: List orders
+      responses:
+        "200":
+          description: Collection, possibly empty
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - id
+                    - user_id
+                    - status
+                  properties:
+                    id:
+                      type: integer
+                    user_id:
+                      type: integer
+                    status:
+                      type: string
+                      enum:
+                        - Processing
+                        - Shipped
+                        - Delivered
+                        - Cancelled
+    post:
+      summary: Create order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+              properties:
+                user_id:
+                  type: integer
+                status:
+                  type: string
+                  enum:
+                    - Processing
+                    - Shipped
+                    - Delivered
+                    - Cancelled
+                  default: Processing
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - id
+                properties:
+                  message:
+                    type: string
+                  id:
+                    type: string
+                    description: PDO lastInsertId returns a string
+        "400":
+          description: Invalid JSON or fields
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
+        "404":
+          description: Referenced user not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
   /orders/{id}:
-    {"parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}}], "get": {"summary": "Read order", "responses": {"200": {"description": "Existing row", "content": {"application/json": {"schema": {"type": "object", "required": ["id", "user_id", "status"], "properties": {"id": {"type": "integer"}, "user_id": {"type": "integer"}, "status": {"type": "string", "enum": ["Processing", "Shipped", "Delivered", "Cancelled"]}}}}}}, "404": {"description": "Not found", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}, "patch": {"summary": "Update order", "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "additionalProperties": false, "minProperties": 1, "properties": {"status": {"type": "string", "enum": ["Processing", "Shipped", "Delivered", "Cancelled"], "default": "Processing"}}, "required": ["status"]}}}}, "responses": {"200": {"description": "Updated, including unchanged values", "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}}, "400": {"description": "Invalid JSON or fields", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}, "404": {"description": "Not found", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}, "delete": {"summary": "Delete order", "responses": {"200": {"description": "Deleted", "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}}, "404": {"description": "Not found", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}, "409": {"description": "Linked items prevent order deletion; cancel instead", "content": {"application/json": {"schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}}}}}}}}
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    get:
+      summary: Read order
+      responses:
+        "200":
+          description: Existing row
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - user_id
+                  - status
+                properties:
+                  id:
+                    type: integer
+                  user_id:
+                    type: integer
+                  status:
+                    type: string
+                    enum:
+                      - Processing
+                      - Shipped
+                      - Delivered
+                      - Cancelled
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
+    patch:
+      summary: Update order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              minProperties: 1
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - Processing
+                    - Shipped
+                    - Delivered
+                    - Cancelled
+                  default: Processing
+              required:
+                - status
+      responses:
+        "200":
+          description: Updated, including unchanged values
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "400":
+          description: Invalid JSON or fields
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
+    delete:
+      summary: Delete order
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
+        "409":
+          description: Linked items prevent order deletion; cancel instead
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
 components:
   schemas:
     Part:
       type: object
-      required: [id, name, category, brand_id, price]
+      required:
+        - id
+        - name
+        - category
+        - brand_id
+        - price
       properties:
-        id: {type: integer, example: 1}
-        name: {type: string, example: GeForce RTX 5070}
-        category: {type: string, example: GPU}
-        brand_id: {type: integer, example: 1}
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: GeForce RTX 5070
+        category:
+          type: string
+          example: GPU
+        brand_id:
+          type: integer
+          example: 1
         price:
           type: string
           description: MariaDB DECIMAL returned by PDO as a string.
-          example: '749.99'
+          example: "749.99"
     PartList:
       type: object
-      required: [data, page, pageSize, total]
+      required:
+        - metadata
+        - data
       properties:
+        metadata:
+          type: object
+          required:
+            - total_items
+            - total_pages
+            - current_page
+            - per_page
+          properties:
+            total_items:
+              type: integer
+              example: 2
+            total_pages:
+              type: integer
+              example: 1
+            current_page:
+              type: integer
+              example: 1
+            per_page:
+              type: integer
+              example: 5
         data:
           type: array
           items:
-            $ref: '#/components/schemas/Part'
-        page: {type: integer, example: 1}
-        pageSize: {type: integer, example: 2}
-        total: {type: integer, example: 2}
+            $ref: "#/components/schemas/Part"
     Brand:
       type: object
-      required: [id, name]
+      required:
+        - id
+        - name
       properties:
-        id: {type: integer}
-        name: {type: string}
+        id:
+          type: integer
+        name:
+          type: string
+    BrandList:
+      type: object
+      required:
+        - metadata
+        - data
+      properties:
+        metadata:
+          type: object
+          required:
+            - total_items
+            - total_pages
+            - current_page
+            - per_page
+          properties:
+            total_items:
+              type: integer
+              example: 2
+            total_pages:
+              type: integer
+              example: 1
+            current_page:
+              type: integer
+              example: 1
+            per_page:
+              type: integer
+              example: 5
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Brand"
     Error:
       type: object
-      required: [error]
+      required:
+        - status
+        - error
       properties:
-        error: {type: string}
+        status:
+          type: integer
+          example: 422
+        error:
+          type: string
+          example: Validation Failed
+        details:
+          type: object
+          additionalProperties:
+            type: string
+          description: Field-level validation errors.
+  responses:
+    BadRequest:
+      description: Malformed JSON or invalid query parameters.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            status: 400
+            error: Malformed JSON payload.
+    NotFound:
+      description: The requested resource or referenced brand was not found.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            status: 404
+            error: Resource not found.
+    NotAcceptable:
+      description: The client requested a response format other than JSON.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            status: 406
+            error: Not Acceptable. This API only provides application/json.
+    UnsupportedMediaType:
+      description: The request body Content-Type is not application/json.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            status: 415
+            error: Unsupported Media Type. Please send application/json.
+    ValidationFailed:
+      description: The JSON body is valid, but one or more fields failed validation.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            status: 422
+            error: Validation Failed
+            details:
+              name: Name is required and must be a string.
