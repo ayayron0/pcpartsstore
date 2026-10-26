@@ -7,7 +7,7 @@ use Slim\App;
 /** @var App $app */
 /** @var PDO $pdo */
 
-$app->get('/parts', function (Request $request, Response $response) use ($pdo) {
+$app->get('/parts', function (Request $request, Response $response) use ($app, $pdo) {
     // $stmt = $pdo->query("SELECT * FROM parts");
 
     // $parts = $stmt->fetchAll();
@@ -32,13 +32,19 @@ $app->get('/parts', function (Request $request, Response $response) use ($pdo) {
 
     foreach ($_GET as $key => $value) {
         if (!in_array($key, $allowedParams)) {
-            $response->getBody()->write(
-                json_encode(['error' => 'Invalid query parameter'])
-            );
+            // $response->getBody()->write(
+            //     json_encode(['error' => 'Invalid query parameter'])
+            // );
 
-            return $response
-                ->withStatus(400)
-                ->withHeader('Content-Type', 'application/json');
+            // return $response
+            //     ->withStatus(400)
+            //     ->withHeader('Content-Type', 'application/json');
+
+            return sendError(
+                $app->getResponseFactory(),
+                400,
+                'Invalid Query parameter'
+            );
         }
     }
 
@@ -54,24 +60,36 @@ $app->get('/parts', function (Request $request, Response $response) use ($pdo) {
     // $limit = 5;
 
     if (!is_numeric($page) || $page < 1 || $page > 100) {
-        $response->getBody()->write(
-            json_encode(['error' => 'Invalid pagination'])
-        );
+        // $response->getBody()->write(
+        //     json_encode(['error' => 'Invalid pagination'])
+        // );
 
-        return $response
-            ->withStatus(400)
-            ->withHeader('Content-Type', 'application/json');
+        // return $response
+        //     ->withStatus(400)
+        //     ->withHeader('Content-Type', 'application/json');
+
+        return sendError(
+            $app->getResponseFactory(),
+            400,
+            'Invalid pagination'
+        );
     }
 
     // Brand ID validation
     if ($brand_id !== null && (!is_numeric($brand_id) || (int) $brand_id < 1)) {
-        $response->getBody()->write(
-            json_encode(['error' => 'Invalid brand ID'])
-        );
+        // $response->getBody()->write(
+        //     json_encode(['error' => 'Invalid brand ID'])
+        // );
 
-        return $response
-            ->withStatus(400)
-            ->withHeader('Content-Type', 'application/json');
+        // return $response
+        //     ->withStatus(400)
+        //     ->withHeader('Content-Type', 'application/json');
+
+        return sendError(
+            $app->getResponseFactory(),
+            400,
+            'Invalid brand ID'
+        );
     }
 
     // 2. Build Dynamic Filtering (WHERE clauses)
@@ -131,28 +149,36 @@ $app->get('/parts', function (Request $request, Response $response) use ($pdo) {
         ->withHeader('Content-Type', 'application/json');
 });
 
-$app->get('/parts/{id}', function (Request $request, Response $response, array $args) use ($pdo) {
+$app->get('/parts/{id}', function (Request $request, Response $response, array $args) use ($app, $pdo) {
+    $partId = $args['id'];
+
     $stmt = $pdo->prepare(
         "SELECT * FROM parts WHERE id = :id"
     );
 
     $stmt->execute([
-        'id' => $args['id']
+        'id' => $partId
     ]);
 
     $part = $stmt->fetch();
 
     if (!$part) {
 
-        $response->getBody()->write(
-            json_encode([
-                'error' => 'PC part not found'
-            ])
-        );
+        // $response->getBody()->write(
+        //     json_encode([
+        //         'error' => 'PC part not found'
+        //     ])
+        // );
 
-        return $response
-            ->withStatus(404)
-            ->withHeader('Content-Type', 'application/json');
+        // return $response
+        //     ->withStatus(404)
+        //     ->withHeader('Content-Type', 'application/json');
+
+        return sendError(
+            $app->getResponseFactory(),
+            404,
+            'PC part not found'
+        );
     }
 
     $response->getBody()->write(
@@ -164,39 +190,52 @@ $app->get('/parts/{id}', function (Request $request, Response $response, array $
         ->withHeader('Content-Type', 'application/json');
 });
 
-$app->post('/parts', function (Request $request, Response $response) use ($pdo) {
-    $data = json_decode(
-        $request->getBody()->getContents(),
-        true
-    );
+$app->post('/parts', function (Request $request, Response $response) use ($app, $pdo) {
+    // $input = json_decode(
+    //     $request->getBody()->getContents(),
+    //     true
+    // );
 
-    if (
-        !isset($data['name']) || !isset($data['category']) || !isset($data['brand_id']) || !isset($data['price'])
-    ) {
-        $response->getBody()->write(
-            json_encode(['error' => 'Brand fields is required'])
+    $input = $request->getParsedBody();
+
+    // Malformed JSON or no JSON object
+    if (!is_array($input)) {
+        return sendError(
+            $app->getResponseFactory(),
+            400,
+            'Malformed JSON payload.'
         );
-
-        return $response
-            ->withStatus(400)
-            ->withHeader('Content-Type', 'application/json');
     }
 
-    $stmt = $pdo->prepare("INSERT INTO parts (name, category, brand_id, price) VALUES (:name, :category, :brand_id, :price)");
+    // Valid JSON, but fields failed validation
+    $validationErrors = validatePartsInput($input);
+
+    if (!empty($validationErrors)) {
+        return sendError(
+            $app->getResponseFactory(),
+            422,
+            'Validation Failed',
+            $validationErrors
+        );
+    }
+
+    // Save trimmed text values
+    $stmt = $pdo->prepare(
+        'INSERT INTO parts (name, category, brand_id, price)
+         VALUES (:name, :category, :brand_id, :price)'
+    );
 
     $stmt->execute([
-        'name' => $data['name'],
-        'category' => $data['category'],
-        'brand_id' => $data['brand_id'],
-        'price' => $data['price']
+        'name' => trim($input['name']),
+        'category' => trim($input['category']),
+        'brand_id' => $input['brand_id'],
+        'price' => $input['price'],
     ]);
 
-    $response->getBody()->write(
-        json_encode([
-            'message' => 'New PC part added',
-            'id' => $pdo->lastInsertId()
-        ])
-    );
+    $response->getBody()->write(json_encode([
+        'message' => 'New PC part added',
+        'id' => $pdo->lastInsertId(),
+    ]));
 
     return $response
         ->withStatus(201)
@@ -207,23 +246,31 @@ $app->delete('/parts/{id}', function (
     Request $request,
     Response $response,
     array $args
-) use ($pdo) {
+) use ($app, $pdo) {
+    $partId = $args['id'];
+
     $stmt = $pdo->prepare(
         "DELETE FROM parts WHERE id = :id"
     );
 
     $stmt->execute([
-        'id' => $args['id']
+        'id' => $partId
     ]);
 
     if ($stmt->rowCount() === 0) {
-        $response->getBody()->write(
-            json_encode(['error' => 'PC part not found'])
-        );
+        // $response->getBody()->write(
+        //     json_encode(['error' => 'PC part not found'])
+        // );
 
-        return $response
-            ->withStatus(404)
-            ->withHeader('Content-Type', 'application/json');
+        // return $response
+        //     ->withStatus(404)
+        //     ->withHeader('Content-Type', 'application/json');
+
+        return sendError(
+            $app->getResponseFactory(),
+            404,
+            'PC part not found'
+        );
     }
 
     $response->getBody()->write(
@@ -239,17 +286,37 @@ $app->patch('/parts/{id}', function (
     Request $request,
     Response $response,
     array $args
-) use ($pdo) {
-    $data = json_decode($request->getBody()->getContents(), true);
+) use ($app, $pdo) {
+    // $data = json_decode($request->getBody()->getContents(), true);
 
-    if (!isset($data['price'])) {
-        $response->getBody()->write(
-            json_encode(['error' => 'Missing price field'])
+    $input = $request->getParsedBody();
+
+    // if (!isset($input['price'])) {
+    //     $response->getBody()->write(
+    //         json_encode(['error' => 'Missing price field'])
+    //     );
+
+    //     return $response
+    //         ->withStatus(400)
+    //         ->withHeader('Content-Type', 'application/json');
+    // }
+
+
+    if (!is_array($input)) {
+        return sendError(
+            $app->getResponseFactory(),
+            400,
+            'Malformed JSON payload.'
         );
+    }
 
-        return $response
-            ->withStatus(400)
-            ->withHeader('Content-Type', 'application/json');
+    if (!isset($input['price'])) {
+        return sendError(
+            $app->getResponseFactory(),
+            422,
+            'Validation Failed',
+            ['price' => 'Price is required.']
+        );
     }
 
     $stmt = $pdo->prepare(
@@ -259,23 +326,78 @@ $app->patch('/parts/{id}', function (
     );
 
     $stmt->execute([
-        'price' => $data['price'],
+        'price' => $input['price'],
         'id' => $args['id']
     ]);
 
     if ($stmt->rowCount() === 0) {
-        $response->getBody()->write(
-            json_encode(['error' => 'PC part not found'])
-        );
+        // $response->getBody()->write(
+        //     json_encode(['error' => 'PC part not found'])
+        // );
 
-        return $response
-            ->withStatus(404)
-            ->withHeader('Content-Type', 'application/json');
+        // return $response
+        //     ->withStatus(404)
+        //     ->withHeader('Content-Type', 'application/json');
+
+        return sendError($app->getResponseFactory(), 404, 'PC part not found');
     }
 
     $response->getBody()->write(
         json_encode(['message' => 'PC part\'s price updated successfully'])
     );
+
+    return $response
+        ->withStatus(200)
+        ->withHeader('Content-Type', 'application/json');
+});
+
+$app->put('/parts/{id}', function (
+    Request $request,
+    Response $response,
+    array $args
+) use ($app, $pdo) {
+    $input = $request->getParsedBody();
+    $partId = $args['id'];
+
+    // Check if JSON decoding failed completely
+    if (!is_array($input)) {
+        return sendError($app->getResponseFactory(), 400, "Malformed JSON payload.");
+    }
+
+    // Run validation
+    $validationErrors = validatePartsInput($input);
+
+    if (!empty($validationErrors)) {
+        return sendError($app->getResponseFactory(), 422, "Validation Failed", $validationErrors);
+    }
+
+    // Check if the PC_part id exists
+    $stmt = $pdo->prepare('SELECT id FROM parts WHERE id = :id');
+    $stmt->execute(['id' => $partId]);
+    $part = $stmt->fetch();
+
+    if (empty($part)) {
+        return sendError($app->getResponseFactory(), 404, "PC part not found");
+    }
+
+    // Update parts based on inputs
+    $putStmt = $pdo->prepare("UPDATE parts SET name = :name, category = :category, brand_id = :brand_id, price = :price WHERE id = :id");
+
+    $putStmt->execute([
+        'name' => trim($input['name']),
+        'category' => trim($input['category']),
+        'brand_id' => $input['brand_id'],
+        'price' => $input['price'],
+        'id' => $partId
+    ]);
+
+    // Fetch updated part data using GET method
+    $getStmt = $pdo->prepare('SELECT * FROM parts WHERE id = :id');
+    $getStmt->execute(['id' => $partId]);
+    $updatedPart = $getStmt->fetch();
+
+    // Return 200 code with updated book data
+    $response->getBody()->write(json_encode($updatedPart));
 
     return $response
         ->withStatus(200)
