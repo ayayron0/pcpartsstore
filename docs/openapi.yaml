@@ -331,14 +331,14 @@ paths:
                         name: NVIDIA
                       - id: 2
                         name: AMD
-              empty:
-                value:
-                  metadata:
-                    total_items: 0
-                    total_pages: 0
-                    current_page: 1
-                    per_page: 5
-                  data: []
+                empty:
+                  value:
+                    metadata:
+                      total_items: 0
+                      total_pages: 0
+                      current_page: 1
+                      per_page: 5
+                    data: []
         "400":
           $ref: "#/components/responses/BadRequest"
         "406":
@@ -518,33 +518,88 @@ paths:
   /users:
     get:
       summary: List users
+      parameters:
+        - in: query
+          name: name
+          required: false
+          description: Filter by first or last name.
+          schema:
+            type: string
+        - in: query
+          name: page
+          required: false
+          description: Page number (1-based).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 1
+        - in: query
+          name: limit
+          required: false
+          description: Number of users per page.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 5
       responses:
         "200":
           description: Collection, possibly empty
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  required:
-                    - id
-                    - first_name
-                    - last_name
-                    - email
-                  properties:
-                    id:
-                      type: integer
-                    first_name:
-                      type: string
-                      maxLength: 100
-                    last_name:
-                      type: string
-                      maxLength: 100
-                    email:
-                      type: string
-                      format: email
-                      maxLength: 255
+                type: object
+                required:
+                  - metadata
+                  - data
+                properties:
+                  metadata:
+                    type: object
+                    required:
+                      - total_items
+                      - total_pages
+                      - current_page
+                      - per_page
+                    properties:
+                      total_items:
+                        type: integer
+                        example: 2
+                      total_pages:
+                        type: integer
+                        example: 1
+                      current_page:
+                        type: integer
+                        example: 1
+                      per_page:
+                        type: integer
+                        example: 5
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - id
+                        - first_name
+                        - last_name
+                        - email
+                      properties:
+                        id:
+                          type: integer
+                        first_name:
+                          type: string
+                          maxLength: 100
+                        last_name:
+                          type: string
+                          maxLength: 100
+                        email:
+                          type: string
+                          format: email
+                          maxLength: 255
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
     post:
       summary: Create user
       requestBody:
@@ -753,31 +808,98 @@ paths:
   /orders:
     get:
       summary: List orders
+      parameters:
+        - in: query
+          name: user_id
+          required: false
+          description: Filter by user ID.
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: status
+          required: false
+          description: Filter by order status.
+          schema:
+            type: string
+            enum:
+              - Processing
+              - Shipped
+              - Delivered
+              - Cancelled
+        - in: query
+          name: page
+          required: false
+          description: Page number (1-based).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 1
+        - in: query
+          name: limit
+          required: false
+          description: Number of orders per page.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 5
       responses:
         "200":
-          description: Collection, possibly empty
+          description: Paginated orders collection, possibly empty.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  required:
-                    - id
-                    - user_id
-                    - status
-                  properties:
-                    id:
-                      type: integer
-                    user_id:
-                      type: integer
-                    status:
-                      type: string
-                      enum:
-                        - Processing
-                        - Shipped
-                        - Delivered
-                        - Cancelled
+                type: object
+                required:
+                  - metadata
+                  - data
+                properties:
+                  metadata:
+                    type: object
+                    required:
+                      - total_items
+                      - total_pages
+                      - current_page
+                      - per_page
+                    properties:
+                      total_items:
+                        type: integer
+                        example: 2
+                      total_pages:
+                        type: integer
+                        example: 1
+                      current_page:
+                        type: integer
+                        example: 1
+                      per_page:
+                        type: integer
+                        example: 5
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - id
+                        - user_id
+                        - status
+                      properties:
+                        id:
+                          type: integer
+                        user_id:
+                          type: integer
+                        status:
+                          type: string
+                          enum:
+                            - Processing
+                            - Shipped
+                            - Delivered
+                            - Cancelled
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
     post:
       summary: Create order
       requestBody:
