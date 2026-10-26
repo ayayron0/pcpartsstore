@@ -7,10 +7,98 @@ use Slim\App;
 /** @var App $app */
 /** @var PDO $pdo */
 
-$app->get('/users', function (Request $request, Response $response) use ($pdo) {
-    $stmt = $pdo->query('SELECT id, first_name, last_name, email FROM users ORDER BY id ASC');
-    $response->getBody()->write(json_encode($stmt->fetchAll()));
+$app->get('/users', function (Request $request, Response $response) use ($app, $pdo) {
+    //Read pagination and filter paramters
+    $page = ($_GET['page'] ?? 1); 
+    $limit = ($_GET['limit'] ?? 5);
+    $name = $_GET['name'] ?? null;
+
+    //reject unsupported query params
+    $allowedParams = ['page', 'limit', 'name'];
+
+    foreach ($_GET as $key => $value) {
+        if (!in_array($key, $allowedParams)) {
+            return sendError(
+                $app->getResponseFactory(),
+                400,
+                'Invalid query parameter'
+            );
+        }
+    }
+
+    //validate page number and page size
+    if (
+    filter_var($page, FILTER_VALIDATE_INT) === false ||
+    $page < 1 ||
+    $page > 100 ||
+    filter_var($limit, FILTER_VALIDATE_INT) === false ||
+    $limit < 1 ||
+    $limit > 50) {
+        return sendError(
+         $app->getResponseFactory(),
+         400,
+         'Invalid pagination'
+     );
+    }
+
+    $offset = ($page - 1) * $limit; //how many rows to skip
+
+    //validate name filter
+    if ($name !== null && !is_string($name)) {
+        return sendError(
+            $app->getResponseFactory(),
+            400,
+            'Invalid name filter'
+        );
+    }
+
+    //optional first-name or last-name filter
+    $whereSql = '';
+    $queryParams = [];
+
+    if ($name !== null && trim($name) !== '') {
+        $whereSql = 'WHERE first_name LIKE :first_name OR last_name LIKE :last_name';
+        $queryParams['first_name'] = '%' . trim($name) . '%';
+        $queryParams['last_name'] = '%' . trim($name) . '%';
+    }
+
+    //count matching records before pagination
+    $countStmt = $pdo->prepare("SELECT COUNT(*) FROM users $whereSql");
+    $countStmt->execute($queryParams);
+    $totalItems = (int) $countStmt->fetchColumn();
+    $totalPages = (int) ceil($totalItems / $limit);
+
+    //fetch one page in a consistent ID order
+    $stmt = $pdo->prepare(
+        "SELECT id, first_name, last_name, email
+        FROM users $whereSql
+        ORDER BY id ASC
+        LIMIT :limit OFFSET :offset"
+    );
+
+    //Bind filter values and pagination integers safely
+    foreach ($queryParams as $key => $value) {
+        $stmt->bindValue(':' . $key, $value, PDO::PARAM_STR);
+    }
+
+    $stmt->bindValue(':limit', (int) $limit, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', (int) $offset, PDO::PARAM_INT);
+    $stmt->execute();
+
+    $response->getBody()->write(
+        json_encode([
+            'metadata' => [
+             'total_items' => $totalItems,
+             'total_pages' => $totalPages,
+             'current_page' => (int) $page,
+             'per_page' => (int) $limit
+        ],
+          'data' => $stmt->fetchAll()
+    ])
+    );
+
     return $response->withHeader('Content-Type', 'application/json');
+
 });
 
 $app->get('/users/{id}', function (Request $request, Response $response, array $args) use ($pdo) {
