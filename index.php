@@ -39,6 +39,10 @@ $errorMiddleware->setDefaultErrorHandler(
     }
 );
 
+// Calling Input Validations before routes
+require_once __DIR__ . '/src/validations/BrandsInputValidator.php';
+require_once __DIR__ . '/src/validations/PartsInputValidator.php';
+
 require __DIR__ . '/src/routes/brands.php';
 require __DIR__ . '/src/routes/parts.php';
 require __DIR__ . '/src/routes/users.php';
