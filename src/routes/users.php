@@ -101,34 +101,77 @@ $app->get('/users', function (Request $request, Response $response) use ($app, $
 
 });
 
-$app->get('/users/{id}', function (Request $request, Response $response, array $args) use ($pdo) {
+$app->get('/users/{id}', function (Request $request, Response $response, array $args) use ($app, $pdo) {
+    // Require a positive integer user ID
+    $userId = filter_var($args['id'], FILTER_VALIDATE_INT);
+
+    if ($userId === false || $userId < 1) {
+        return sendError(
+            $app->getResponseFactory(),
+            400,
+            'Invalid user ID'
+        );
+    }
+
     $stmt = $pdo->prepare('SELECT id, first_name, last_name, email FROM users WHERE id = :id');
     $stmt->execute(['id' => $args['id']]);
     $user = $stmt->fetch();
+
     if (!$user) {
-        $response->getBody()->write(json_encode(['error' => 'User not found']));
-        return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
+        return sendError(
+            $app->getResponseFactory(),
+            404,
+            'User not found'
+        );
     }
     $response->getBody()->write(json_encode($user));
     return $response->withHeader('Content-Type', 'application/json');
 });
 
-$app->post('/users', function (Request $request, Response $response) use ($pdo) {
-    $data = json_decode($request->getBody()->getContents(), true);
-    if (!is_array($data) || !isset($data['first_name'], $data['last_name'], $data['email'])) {
-        $response->getBody()->write(json_encode(['error' => 'First name, last name and email are required']));
-        return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+$app->post('/users', function (Request $request, Response $response) use ($app, $pdo) {
+    // Read the JSON body parsed by Slim middleware
+    $data = $request->getParsedBody();
+
+    // Reject a missing or malformed JSON body
+    if (!is_array($data)) {
+        return sendError(
+            $app->getResponseFactory(),
+            400,
+            'Malformed JSON payload.'
+        );
     }
+
+    // Check required user fields
+    if (!isset($data['first_name'], $data['last_name'], $data['email'])) {
+        return sendError(
+            $app->getResponseFactory(),
+            422,
+            'Validation Failed',
+            ['fields' => 'First name, last name and email are required.']
+        );
+    }
+
     foreach (['first_name' => 100, 'last_name' => 100, 'email' => 255] as $field => $maxLength) {
         if (!is_string($data[$field]) || trim($data[$field]) === '' || mb_strlen(trim($data[$field])) > $maxLength) {
-            $response->getBody()->write(json_encode(['error' => 'Invalid user fields']));
-            return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+            return sendError(
+                $app->getResponseFactory(),
+                422,
+                'Validation Failed',
+                [$field => "Must be a non-empty string of at most $maxLength characters."]
+            );
         }
+        
         $data[$field] = trim($data[$field]);
     }
+
+    // Validate the email format
     if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-        $response->getBody()->write(json_encode(['error' => 'Invalid email']));
-        return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+        return sendError(
+            $app->getResponseFactory(),
+            422,
+            'Validation Failed',
+            ['email' => 'A valid email address is required.']
+        );
     }
     try {
         $stmt = $pdo->prepare('INSERT INTO users (first_name, last_name, email) VALUES (:first_name, :last_name, :email)');
@@ -137,41 +180,94 @@ $app->post('/users', function (Request $request, Response $response) use ($pdo) 
         if ((int)($e->errorInfo[1] ?? 0) !== 1062) {
             throw $e;
         }
-        $response->getBody()->write(json_encode(['error' => 'Email already exists']));
-        return $response->withStatus(409)->withHeader('Content-Type', 'application/json');
+        return sendError(
+            $app->getResponseFactory(),
+            409,
+            'Email already exists'
+        );
     }
+
     $response->getBody()->write(json_encode(['message' => 'New user added', 'id' => $pdo->lastInsertId()]));
     return $response->withStatus(201)->withHeader('Content-Type', 'application/json');
 });
 
-$app->patch('/users/{id}', function (Request $request, Response $response, array $args) use ($pdo) {
-    $data = json_decode($request->getBody()->getContents(), true);
-    if (!is_array($data) || !$data || array_diff(array_keys($data), ['first_name', 'last_name', 'email'])) {
-        $response->getBody()->write(json_encode(['error' => 'Provide first_name, last_name or email only']));
-        return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+$app->patch('/users/{id}', function (Request $request, Response $response, array $args) use ($app, $pdo) {
+    // Require a positive integer user ID
+    $userId = filter_var($args['id'], FILTER_VALIDATE_INT);
+
+    if ($userId === false || $userId < 1) {
+        return sendError(
+            $app->getResponseFactory(),
+            400,
+            'Invalid user ID'
+        );
     }
+
+    // Read the JSON body parsed by Slim middleware
+    $data = $request->getParsedBody();
+
+    // Reject a missing or malformed JSON body
+    if (!is_array($data)) {
+        return sendError(
+            $app->getResponseFactory(),
+            400,
+            'Malformed JSON payload.'
+        );
+    }
+
+    // Require at least one supported user field
+    if (
+        !$data ||
+        array_diff(array_keys($data), ['first_name', 'last_name', 'email'])
+    ) {
+        return sendError(
+            $app->getResponseFactory(),
+            422,
+            'Validation Failed',
+            ['fields' => 'Provide first_name, last_name or email only.']
+        );
+    }
+
     $updates = [];
     $params = ['id' => $args['id']];
+
     foreach (['first_name' => 100, 'last_name' => 100, 'email' => 255] as $field => $maxLength) {
         if (!array_key_exists($field, $data)) {
             continue;
         }
         if (!is_string($data[$field]) || trim($data[$field]) === '' || mb_strlen(trim($data[$field])) > $maxLength) {
-            $response->getBody()->write(json_encode(['error' => 'Invalid user fields']));
-            return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+            return sendError(
+                $app->getResponseFactory(),
+                422,
+                'Validation Failed',
+                [$field => "Must be a non-empty string of at most $maxLength characters."]
+            );
         }
+
         $params[$field] = trim($data[$field]);
         $updates[] = "$field = :$field";
     }
+
+    // Validate the email format when supplied
     if (isset($params['email']) && !filter_var($params['email'], FILTER_VALIDATE_EMAIL)) {
-        $response->getBody()->write(json_encode(['error' => 'Invalid email']));
-        return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+        return sendError(
+            $app->getResponseFactory(),
+            422,
+            'Validation Failed',
+            ['email' => 'A valid email address is required.']
+        );
     }
+
     $stmt = $pdo->prepare('SELECT id FROM users WHERE id = :id');
     $stmt->execute(['id' => $args['id']]);
+
+    // Return 404 if the user does not exist
     if (!$stmt->fetch()) {
-        $response->getBody()->write(json_encode(['error' => 'User not found']));
-        return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
+        return sendError(
+            $app->getResponseFactory(),
+            404,
+            'User not found'
+        );
     }
     try {
         $stmt = $pdo->prepare('UPDATE users SET ' . implode(', ', $updates) . ' WHERE id = :id');
@@ -180,14 +276,29 @@ $app->patch('/users/{id}', function (Request $request, Response $response, array
         if ((int)($e->errorInfo[1] ?? 0) !== 1062) {
             throw $e;
         }
-        $response->getBody()->write(json_encode(['error' => 'Email already exists']));
-        return $response->withStatus(409)->withHeader('Content-Type', 'application/json');
+        return sendError(
+            $app->getResponseFactory(),
+            409,
+            'Email already exists'
+        );
     }
+
     $response->getBody()->write(json_encode(['message' => 'User updated successfully']));
     return $response->withHeader('Content-Type', 'application/json');
 });
 
-$app->delete('/users/{id}', function (Request $request, Response $response, array $args) use ($pdo) {
+$app->delete('/users/{id}', function (Request $request, Response $response, array $args) use ($app, $pdo) {
+    // Require a positive integer user ID
+    $userId = filter_var($args['id'], FILTER_VALIDATE_INT);
+
+    if ($userId === false || $userId < 1) {
+        return sendError(
+            $app->getResponseFactory(),
+            400,
+            'Invalid user ID'
+        );
+    }
+    
     try {
         $stmt = $pdo->prepare('DELETE FROM users WHERE id = :id');
         $stmt->execute(['id' => $args['id']]);
@@ -195,13 +306,21 @@ $app->delete('/users/{id}', function (Request $request, Response $response, arra
         if ((int)($e->errorInfo[1] ?? 0) !== 1451) {
             throw $e;
         }
-        $response->getBody()->write(json_encode(['error' => 'Cannot remove a user with orders']));
-        return $response->withStatus(409)->withHeader('Content-Type', 'application/json');
+        return sendError(
+            $app->getResponseFactory(),
+            409,
+            'Cannot remove a user with orders'
+        );
     }
+    // Return 404 if no user was deleted
     if ($stmt->rowCount() === 0) {
-        $response->getBody()->write(json_encode(['error' => 'User not found']));
-        return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
+        return sendError(
+            $app->getResponseFactory(),
+            404,
+            'User not found'
+        );
     }
+
     $response->getBody()->write(json_encode(['message' => 'User removed successfully']));
     return $response->withHeader('Content-Type', 'application/json');
 });
