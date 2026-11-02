@@ -13,8 +13,10 @@ $app->setBasePath('/pcpartsstore');
 
 // Request Parsing Middleware, Routing Middleware and Content Negotiation Middleware 
 // Global Exception Handler Middleware and JSON Helper Handler
+// CORS Preflight Requests (OPTIONS)
 require_once __DIR__ . '/src/handlers/JsonErrorHandler.php'; // Defines sendError()
 require_once __DIR__ . '/src/middlewares/ContentNegotiationMiddleware.php';
+require_once __DIR__ . '/src/middlewares/CorsMiddleware.php';
 
 // Let route handlers read JSON request bodies.
 $app->addBodyParsingMiddleware();
@@ -24,6 +26,9 @@ $app->addRoutingMiddleware();
 
 // User-defined Content Negotiation Middleware
 $app->add(runContentNegotiationMiddleware($app->getResponseFactory()));
+
+// Browser clients can connect without being blocked
+$app->add(corsPreflightMiddleware($app->getResponseFactory()));
 
 // Global Exception/Error Handler Middleware using JsonErrorHandler
 $errorMiddleware = $app->addErrorMiddleware(false, true, true);
