@@ -48,6 +48,19 @@ $errorMiddleware->setDefaultErrorHandler(
 require_once __DIR__ . '/src/validations/BrandsInputValidator.php';
 require_once __DIR__ . '/src/validations/PartsInputValidator.php';
 
+// Calling models
+require_once __DIR__ . '/src/models/BrandsModel.php';
+require_once __DIR__ . '/src/models/PartsModel.php';
+require_once __DIR__ . '/src/models/UsersModel.php';
+require_once __DIR__ . '/src/models/OrdersModel.php';
+
+// Calling controllers
+require_once __DIR__ . '/src/controllers/BrandsController.php';
+require_once __DIR__ . '/src/controllers/PartsController.php';
+require_once __DIR__ . '/src/controllers/UsersController.php';
+require_once __DIR__ . '/src/controllers/OrdersController.php';
+
+// Calling routes
 require __DIR__ . '/src/routes/brands.php';
 require __DIR__ . '/src/routes/parts.php';
 require __DIR__ . '/src/routes/users.php';
