@@ -25,8 +25,12 @@ class UsersController
         $limit = ($_GET['limit'] ?? 5);
         $name = $_GET['name'] ?? null;
 
+        // Read sorting parameters
+        $sort = $_GET['sort'] ?? 'id';
+        $direction = $_GET['direction'] ?? 'asc';
+
         //reject unsupported query params
-        $allowedParams = ['page', 'limit', 'name'];
+        $allowedParams = ['page', 'limit', 'name', 'sort', 'direction'];
 
         foreach ($_GET as $key => $value) {
             if (!in_array($key, $allowedParams)) {
@@ -36,6 +40,22 @@ class UsersController
                     'Invalid query parameter'
                 );
             }
+        }
+
+        // Allow only supported sorting fields and directions
+        $allowedSortFields = ['id', 'first_name', 'last_name'];
+        $allowedDirections = ['asc', 'desc'];
+
+        if (
+            !in_array($sort, $allowedSortFields, true) ||
+            !in_array($direction, $allowedDirections, true)) {
+
+            return sendError(
+                $this->responseFactory,
+                400,
+                'Invalid sorting parameter'
+            );
+
         }
 
         //validate page number and page size
@@ -84,7 +104,9 @@ class UsersController
             $whereSql,
             $queryParams,
             $limit,
-            (int) $offset
+            (int) $offset,
+            $sort,
+            $direction
         );
 
         $response->getBody()->write(
