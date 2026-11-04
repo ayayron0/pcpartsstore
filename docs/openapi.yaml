@@ -543,6 +543,27 @@ paths:
             minimum: 1
             maximum: 50
             default: 5
+        - in: query
+          name: sort
+          required: false
+          description: Sort by the selected field, then by ID ascending for ties.
+          schema:
+            type: string
+            enum:
+              - id
+              - first_name
+              - last_name
+            default: id
+        - in: query
+          name: direction
+          required: false
+          description: Sorting direction for the selected field.
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
       responses:
         "200":
           description: Collection, possibly empty
@@ -810,6 +831,27 @@ paths:
             minimum: 1
             maximum: 50
             default: 5
+        - in: query
+          name: sort
+          required: false
+          description: Sort by the selected field, then by ID ascending for ties.
+          schema:
+            type: string
+            enum:
+              - id
+              - user_id
+              - status
+            default: id
+        - in: query
+          name: direction
+          required: false
+          description: Sorting direction for the selected field.
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
       responses:
         "200":
           description: Paginated orders collection, possibly empty.

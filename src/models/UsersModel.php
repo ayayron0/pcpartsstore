@@ -24,13 +24,15 @@ class UsersModel
         string $whereSql,
         array $queryParams,
         int|string $limit,
-        int $offset
+        int $offset,
+        string $sort,
+        string $direction
     ): array {
         //fetch one page in a consistent ID order
         $stmt = $this->pdo->prepare(
             "SELECT id, first_name, last_name, email
             FROM users $whereSql
-            ORDER BY id ASC
+            ORDER BY $sort $direction, id ASC
             LIMIT :limit OFFSET :offset"
         );
 

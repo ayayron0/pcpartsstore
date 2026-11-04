@@ -26,8 +26,12 @@ class OrdersController
         $user_id = $_GET['user_id'] ?? null;
         $status = $_GET['status'] ?? null;
 
+       // Read sorting parameters
+        $sort = $_GET['sort'] ?? 'id';
+        $direction = $_GET['direction'] ?? 'asc';
+
         //reject unsupported query params
-        $allowedParams = ['page', 'limit', 'user_id', 'status'];
+        $allowedParams = ['page', 'limit', 'user_id', 'status', 'sort', 'direction'];
 
         foreach ($_GET as $key => $value) {
             if (!in_array($key, $allowedParams)) {
@@ -37,6 +41,22 @@ class OrdersController
                     'Invalid query parameter'
                 );
             }
+        }
+
+        // Allow only supported sorting fields and directions
+        $allowedSortFields = ['id', 'user_id', 'status'];
+        $allowedDirections = ['asc', 'desc'];
+
+        if (
+            !in_array($sort, $allowedSortFields, true) ||
+            !in_array($direction, $allowedDirections, true)) {
+
+            return sendError(
+                $this->responseFactory,
+                400,
+                'Invalid sorting parameter'
+            );
+
         }
 
         //validate page number and page size
@@ -109,7 +129,9 @@ class OrdersController
             $whereSql,
             $queryParams,
             $limit,
-            (int) $offset
+            (int) $offset,
+            $sort,
+            $direction
         );
 
         $response->getBody()->write(
