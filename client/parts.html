@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PC Parts Store Parts Manager Client</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <h1>PC Parts Store Parts Web Service</h1>
+
+    <!-- Feedback / Error Display Box -->
+    <div id="feedbackBox" class="box error-box"></div>
+
+    <!-- Filter & Collection Section -->
+    <div class="box">
+      <h2>Parts Stock</h2>
+      <div>
+        <input
+          type="text"
+          id="filter"
+          placeholder="Filter by name (e.g. GeForce)"
+        />
+        <button onclick="applyFilter()">Search</button>
+        <button onclick="resetFilter()">Reset</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Brand ID</th>
+            <th>Price</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="partTableBody"></tbody>
+      </table>
+
+      <div class="pagination">
+        <button id="prevBtn" onclick="changePage(-1)">Previous</button>
+        <span id="pageInfo">Page 1 of 1</span>
+        <button id="nextBtn" onclick="changePage(1)">Next</button>
+      </div>
+    </div>
+
+    <!-- Create Part Form -->
+    <div class="box">
+      <h2>Add a New Part</h2>
+      <form id="addPartForm" novalidate>
+        <div class="form-group">
+          <label for="partName">Name:</label>
+          <input type="text" id="partName" placeholder="Enter part name" />
+        </div>
+
+        <div class="form-group">
+          <label for="partCategory">Category:</label>
+          <input type="text" id="partCategory" placeholder="Enter category" />
+        </div>
+
+        <div class="form-group">
+          <label for="partBrandId">Brand:</label>
+          <select id="partBrandId">
+            <option value="">Select a brand</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="partPrice">Price:</label>
+          <input
+            type="number"
+            id="partPrice"
+            min="0"
+            step="0.01"
+            placeholder="Enter price"
+          />
+        </div>
+
+        <button type="submit">Create Part</button>
+      </form>
+    </div>
+
+    <!-- Update Part Form -->
+    <div class="box">
+      <h2>Update a Part</h2>
+      <form id="updatePartForm" novalidate>
+        <div class="form-group">
+          <label for="updatePartId">Part ID:</label>
+          <input type="number" id="updatePartId" readonly />
+        </div>
+
+        <div class="form-group">
+          <label for="updatePartName">Name:</label>
+          <input
+            type="text"
+            id="updatePartName"
+            placeholder="Enter part name"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="updatePartCategory">Category:</label>
+          <input
+            type="text"
+            id="updatePartCategory"
+            placeholder="Enter category"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="updatePartBrandId">Brand:</label>
+          <select id="updatePartBrandId">
+            <option value="">Select a brand</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="updatePartPrice">Price:</label>
+          <input
+            type="number"
+            id="updatePartPrice"
+            min="0"
+            step="0.01"
+            placeholder="Enter price"
+          />
+        </div>
+
+        <button type="submit">Update Part</button>
+      </form>
+    </div>
+
+    <script src="parts.js"></script>
+  </body>
+</html>

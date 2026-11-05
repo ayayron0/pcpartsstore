@@ -36,11 +36,22 @@ class PartsController
         // 1. Extract Pagination Params (with sensible defaults)
         $page = (int) ($_GET['page'] ?? 1);
         $limit = (int) ($_GET['limit'] ?? 5);
+        $name = $_GET['name'] ?? null;
         $category = $_GET['category'] ?? null;
         $brand_id = $_GET['brand_id'] ?? null;
+        $sort = $_GET['sort'] ?? 'id';
+        $direction = $_GET['direction'] ?? 'asc';
 
         // Invalid query parameters validation
-        $allowedParams = ['page', 'limit', 'category', 'brand_id'];
+        $allowedParams = [
+            'page',
+            'limit',
+            'name',
+            'category',
+            'brand_id',
+            'sort',
+            'direction'
+        ];
 
         foreach ($_GET as $key => $value) {
             if (!in_array($key, $allowedParams)) {
@@ -104,9 +115,28 @@ class PartsController
             );
         }
 
+        $allowedSortFields = ['id', 'name', 'category', 'brand_id', 'price'];
+        $allowedDirections = ['asc', 'desc'];
+
+        if (
+            !in_array($sort, $allowedSortFields, true) ||
+            !in_array($direction, $allowedDirections, true)
+        ) {
+            return sendError(
+                $this->responseFactory,
+                400,
+                'Invalid sorting parameter'
+            );
+        }
+
         // 2. Build Dynamic Filtering (WHERE clauses)
         $whereClauses = [];
         $queryParams = [];
+
+        if (isset($name) && trim($name) !== '') {
+            $whereClauses[] = "name LIKE :name";
+            $queryParams['name'] = "%{$name}%"; // String interpolation instead of "%" . $name . "%"
+        }
 
         if (isset($category)) {
             $whereClauses[] = "category = :category";
@@ -132,12 +162,14 @@ class PartsController
         );
         $totalPages = ceil($totalItems / $limit);
 
-        // 4. Fetch the Paginated Data
-        $parts = $this->partsModel->getPaginatedParts(
+        // 4. Fetch the Paginated and sort Data
+        $parts = $this->partsModel->getPartsPage(
             $whereSql,
             $queryParams,
             $limit,
-            $offset
+            $offset,
+            $sort,
+            $direction
         );
 
         // 5. Return Enveloped Response

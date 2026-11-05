@@ -19,7 +19,7 @@ class BrandsModel
         return (int)$countStmt->fetchColumn();
     }
 
-    public function getPaginatedBrands(
+    public function getBrandsPage(
         string $whereSql,
         array $queryParams,
         int $limit,
