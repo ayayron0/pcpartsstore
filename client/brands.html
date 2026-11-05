@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PC Parts Store Brands Manager Client</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <h1>PC Parts Store Brands Web Service</h1>
+
+    <!-- Feedback / Error Display Box -->
+    <div id="feedbackBox" class="box error-box"></div>
+
+    <!-- Filter & Collection Section -->
+    <div class="box">
+      <h2>Brands</h2>
+      <div>
+        <input
+          type="text"
+          id="filter"
+          placeholder="Filter by brand name"
+        />
+        <button onclick="applyFilter()">Search</button>
+        <button onclick="resetFilter()">Reset</button>
+
+        <label for="sortBy">Sort by:</label>
+        <select id="sortBy" onchange="applySort()">
+          <option value="id">ID</option>
+          <option value="name">Name</option>
+        </select>
+
+        <label for="sortDirection">Direction:</label>
+        <select id="sortDirection" onchange="applySort()">
+          <option value="asc">Ascending</option>
+          <option value="desc">Descending</option>
+        </select>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="brandTableBody"></tbody>
+      </table>
+
+      <div class="pagination">
+        <button id="prevBtn" onclick="changePage(-1)">Previous</button>
+        <span id="pageInfo">Page 1 of 1</span>
+        <button id="nextBtn" onclick="changePage(1)">Next</button>
+      </div>
+    </div>
+
+    <!-- Create Brand Form -->
+    <div class="box">
+      <h2>Add a New Brand</h2>
+      <form id="addBrandForm" novalidate>
+        <div class="form-group">
+          <label for="brandName">Name:</label>
+          <input
+            type="text"
+            id="brandName"
+            placeholder="Enter brand name"
+          />
+        </div>
+
+        <button type="submit">Create Brand</button>
+      </form>
+    </div>
+
+    <!-- Update Brand Form -->
+    <div class="box">
+      <h2>Update a Brand</h2>
+      <form id="updateBrandForm" novalidate>
+        <div class="form-group">
+          <label for="updateBrandId">Brand ID:</label>
+          <input
+            type="number"
+            id="updateBrandId"
+            min="1"
+            step="1"
+            placeholder="Enter brand ID"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="updateBrandName">Name:</label>
+          <input
+            type="text"
+            id="updateBrandName"
+            placeholder="Enter brand name"
+          />
+        </div>
+
+        <button type="submit">Update Brand</button>
+      </form>
+    </div>
+
+    <script src="brands.js"></script>
+  </body>
+</html>

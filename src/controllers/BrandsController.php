@@ -35,9 +35,11 @@ class BrandsController
         $page = (int) ($_GET['page'] ?? 1);
         $limit = (int) ($_GET['limit'] ?? 5);
         $name = $_GET['name'] ?? null;
+        $sort = $_GET['sort'] ?? 'id';
+        $direction = $_GET['direction'] ?? 'asc';
 
         // Invalid query parameters validation
-        $allowedParams = ['page', 'limit', 'name'];
+        $allowedParams = ['page', 'limit', 'name', 'sort', 'direction'];
 
         foreach ($_GET as $key => $value) {
             if (!in_array($key, $allowedParams)) {
@@ -67,6 +69,20 @@ class BrandsController
             );
         }
 
+        $allowedSortFields = ['id', 'name'];
+        $allowedDirections = ['asc', 'desc'];
+
+        if (
+            !in_array($sort, $allowedSortFields, true) ||
+            !in_array($direction, $allowedDirections, true)
+        ) {
+            return sendError(
+                $this->responseFactory,
+                400,
+                'Invalid sorting parameter'
+            );
+        }
+
         // 2. Build Dynamic Filtering (WHERE clauses)
         $whereClauses = [];
         $queryParams = [];
@@ -89,12 +105,14 @@ class BrandsController
         );
         $totalPages = ceil($totalItems / $limit);
 
-        // 4. Fetch the Paginated Data
+        // 4. Fetch the Paginated and Sorted Data
         $parts = $this->brandsModel->getBrandsPage(
             $whereSql,
             $queryParams,
             $limit,
-            $offset
+            $offset,
+            $sort,
+            $direction
         );
 
         // 5. Return Enveloped Response

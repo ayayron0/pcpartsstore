@@ -41,6 +41,7 @@ class PartsController
         $brand_id = $_GET['brand_id'] ?? null;
         $sort = $_GET['sort'] ?? 'id';
         $direction = $_GET['direction'] ?? 'asc';
+        $search = $_GET['search'] ?? null;
 
         // Invalid query parameters validation
         $allowedParams = [
@@ -50,7 +51,8 @@ class PartsController
             'category',
             'brand_id',
             'sort',
-            'direction'
+            'direction',
+            'search'
         ];
 
         foreach ($_GET as $key => $value) {
@@ -146,6 +148,14 @@ class PartsController
         if (isset($brand_id)) {
             $whereClauses[] = "brand_id = :brand_id";
             $queryParams['brand_id'] = $brand_id;
+        }
+
+        // Filter logic for parts name and category with one search
+        if (isset($search) && trim($search) !== '') {
+            $whereClauses[] = "(name LIKE :nameSearch OR category LIKE :categorySearch)";
+            $searchText = '%' . trim($search) . '%';
+            $queryParams['nameSearch'] = $searchText;
+            $queryParams['categorySearch'] = $searchText;
         }
 
         // Combine WHERE clauses if any exist
