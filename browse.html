@@ -143,7 +143,7 @@
             el("parts").append(row);
           }
           el("previous").disabled = page <= 1;
-          el("next").disabled = page * result.pageSize >= result.total;
+          el("next").disabled = page >= result.metadata.total_pages;
         } catch (error) {
           el("list-status").textContent += " — " + error.message;
         }

@@ -34,13 +34,28 @@ $app->add(corsPreflightMiddleware($app->getResponseFactory()));
 $errorMiddleware = $app->addErrorMiddleware(false, true, true);
 $errorMiddleware->setDefaultErrorHandler(
     function (Request $request, Throwable $exception) use ($app) {
-        // In production , you would log $exception ->getMessage() to a file
-        // rather than exposing internal database details to the user.   
-        return sendError(
+        $statusCode = 500;
+        $message = 'Internal Server Error';
+
+        if ($exception instanceof \Slim\Exception\HttpException) {
+            $statusCode = $exception->getCode();
+            $message = $exception->getMessage();
+        }
+
+        $response = sendError(
             $app->getResponseFactory(),
-            500,
-            'Internal Server Error',
+            $statusCode,
+            $message
         );
+
+        if ($exception instanceof \Slim\Exception\HttpMethodNotAllowedException) {
+            $response = $response->withHeader(
+                'Allow',
+                implode(', ', $exception->getAllowedMethods())
+            );
+        }
+
+        return $response;
     }
 );
 
