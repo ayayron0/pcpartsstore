@@ -79,11 +79,8 @@ require_once __DIR__ . '/src/controllers/PartsController.php';
 require_once __DIR__ . '/src/controllers/UsersController.php';
 require_once __DIR__ . '/src/controllers/OrdersController.php';
 
-// Calling routes
-require __DIR__ . '/src/routes/brands.php';
-require __DIR__ . '/src/routes/parts.php';
-require __DIR__ . '/src/routes/users.php';
-require __DIR__ . '/src/routes/orders.php';
+// Calling Global Route
+require __DIR__ . '/src/routes/routes.php';
 
 $app->get('/', function (Request $request, Response $response) {
     $response->getBody()->write(
