@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DoubleBolt — Users</title>
+
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+
+        .box {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .error-box {
+            background: #ffe6e6;
+            border-color: #cc0000;
+            color: #990000;
+        }
+
+        .success-box {
+            background: #e6ffe6;
+            border-color: #009900;
+            color: #006600;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 6px;
+            box-sizing: border-box;
+        }
+
+        .pagination {
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        button, select {
+            padding: 6px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>DoubleBolt — Users</h1>
+    <p><a href="orders.html">Go to orders</a></p>
+
+    <!-- Displays errors and success messages -->
+    <div id="feedbackBox" class="box" role="status" hidden></div>
+
+    <div class="box">
+        <h2>User List</h2>
+
+        <!-- Filtering and sorting controls -->
+        <form id="filterForm">
+            <label for="filterName">Name:</label>
+            <input id="filterName" type="search"
+                   placeholder="First or last name">
+
+            <label for="sortField">Sort by:</label>
+            <select id="sortField">
+                <option value="id">ID</option>
+                <option value="first_name">First name</option>
+                <option value="last_name">Last name</option>
+            </select>
+
+            <label for="sortDirection">Direction:</label>
+            <select id="sortDirection">
+                <option value="asc">Ascending</option>
+                <option value="desc">Descending</option>
+            </select>
+
+            <button type="submit">Search</button>
+            <button type="button" onclick="resetFilter()">Reset</button>
+        </form>
+
+        <p id="listStatus" role="status"></p>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>First name</th>
+                        <th>Last name</th>
+                        <th>Email</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody"></tbody>
+            </table>
+        </div>
+
+        <div class="pagination">
+            <button id="prevBtn" onclick="changePage(-1)" disabled>
+                Previous
+            </button>
+
+            <span id="pageInfo"></span>
+
+            <button id="nextBtn" onclick="changePage(1)" disabled>
+                Next
+            </button>
+        </div>
+    </div>
+
+    <!-- The same form creates or edits a user -->
+    <div class="box">
+        <h2 id="formHeading">Create User</h2>
+
+        <form id="userForm">
+            <div class="form-group">
+                <label for="firstName">First name:</label>
+                <input id="firstName" type="text"
+                       maxlength="100" required>
+            </div>
+
+            <div class="form-group">
+                <label for="lastName">Last name:</label>
+                <input id="lastName" type="text"
+                       maxlength="100" required>
+            </div>
+
+            <div class="form-group">
+                <label for="userEmail">Email:</label>
+                <input id="userEmail" type="email"
+                       maxlength="255" required>
+            </div>
+
+            <button id="saveBtn" type="submit">Create User</button>
+            <button id="cancelBtn" type="button"
+                    onclick="resetUserForm()" hidden>
+                Cancel Edit
+            </button>
+        </form>
+    </div>
+
+    <script src="users.js"></script>
+</body>
+</html>

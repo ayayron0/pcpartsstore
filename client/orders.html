@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DoubleBolt — Orders</title>
+
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+
+        .box {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .error-box {
+            background: #ffe6e6;
+            border-color: #cc0000;
+            color: #990000;
+        }
+
+        .success-box {
+            background: #e6ffe6;
+            border-color: #009900;
+            color: #006600;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 6px;
+            box-sizing: border-box;
+        }
+
+        .pagination {
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        button, select {
+            padding: 6px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>DoubleBolt — Orders</h1>
+    <p><a href="users.html">Go to users</a></p>
+
+    <!-- Displays errors and success messages -->
+    <div id="feedbackBox" class="box" role="status" hidden></div>
+
+    <div class="box">
+        <h2>Order List</h2>
+
+        <!-- Filtering and sorting controls -->
+        <form id="filterForm">
+            <label for="filterUserId">User ID:</label>
+            <input id="filterUserId" type="number" min="1" step="1">
+
+            <label for="filterStatus">Status:</label>
+            <select id="filterStatus">
+                <option value="">All statuses</option>
+                <option value="Processing">Processing</option>
+                <option value="Shipped">Shipped</option>
+                <option value="Delivered">Delivered</option>
+                <option value="Cancelled">Cancelled</option>
+            </select>
+
+            <label for="sortField">Sort by:</label>
+            <select id="sortField">
+                <option value="id">ID</option>
+                <option value="user_id">User ID</option>
+                <option value="status">Status</option>
+            </select>
+
+            <label for="sortDirection">Direction:</label>
+            <select id="sortDirection">
+                <option value="asc">Ascending</option>
+                <option value="desc">Descending</option>
+            </select>
+
+            <button type="submit">Search</button>
+            <button type="button" onclick="resetFilter()">Reset</button>
+        </form>
+
+        <p id="listStatus" role="status"></p>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>User ID</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="orderTableBody"></tbody>
+            </table>
+        </div>
+
+        <div class="pagination">
+            <button id="prevBtn" onclick="changePage(-1)" disabled>
+                Previous
+            </button>
+
+            <span id="pageInfo"></span>
+
+            <button id="nextBtn" onclick="changePage(1)" disabled>
+                Next
+            </button>
+        </div>
+    </div>
+
+    <!-- Create an order or edit its status -->
+    <div class="box">
+        <h2 id="formHeading">Create Order</h2>
+
+        <form id="orderForm">
+            <div class="form-group">
+                <label for="orderUserId">User ID:</label>
+                <input id="orderUserId" type="number"
+                       min="1" step="1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="orderStatus">Status:</label>
+                <select id="orderStatus">
+                    <option value="Processing">Processing</option>
+                    <option value="Shipped">Shipped</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Cancelled">Cancelled</option>
+                </select>
+            </div>
+
+            <button id="saveBtn" type="submit">Create Order</button>
+            <button id="cancelBtn" type="button"
+                    onclick="resetOrderForm()" hidden>
+                Cancel Edit
+            </button>
+        </form>
+    </div>
+
+    <script src="orders.js"></script>
+</body>
+</html>
