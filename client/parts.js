@@ -199,12 +199,12 @@ updatePartForm.addEventListener("submit", async function (event) {
   // Client-side input validation
   const clientErrors = {};
 
-  if (name.length < 2 || name.length > 255) {
-    clientErrors.name = "Name must be between 2 and 255 characters.";
+  if (name.length === 0) {
+    clientErrors.name = "Please enter a part name.";
   }
 
-  if (category.length < 2 || category.length > 255) {
-    clientErrors.category = "Category must be between 2 and 255 characters.";
+  if (category.length === 0) {
+    clientErrors.category = "Please enter a category.";
   }
 
   if (brandIdText === "" || !Number.isInteger(brandId) || brandId < 1) {
@@ -341,12 +341,12 @@ partForm.addEventListener("submit", async function (event) {
   // Client-side input validation
   const clientErrors = {};
 
-  if (name.length < 2 || name.length > 255) {
-    clientErrors.name = "Name must be between 2 and 255 characters.";
+  if (name.length === 0) {
+    clientErrors.name = "Please enter a part name.";
   }
 
-  if (category.length < 2 || category.length > 255) {
-    clientErrors.category = "Category must be between 2 and 255 characters.";
+  if (category.length === 0) {
+    clientErrors.category = "Please enter a category.";
   }
 
   if (brandIdText === "" || !Number.isInteger(brandId) || brandId < 1) {
