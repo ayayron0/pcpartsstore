@@ -48,6 +48,7 @@ $app->delete('/orders/{id}', [$ordersController, 'delete']);
 // Part routes
 $app->get('/parts', [$partsController, 'index']);
 $app->get('/parts/{id}', [$partsController, 'show']);
+$app->get('/parts/{id}/converted-price', [$partsController, 'convertedPrice']);
 $app->post('/parts', [$partsController, 'store']);
 $app->delete('/parts/{id}', [$partsController, 'delete']);
 $app->patch('/parts/{id}', [$partsController, 'patch']);
