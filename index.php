@@ -17,6 +17,7 @@ $app->setBasePath('/pcpartsstore');
 require_once __DIR__ . '/src/handlers/JsonErrorHandler.php'; // Defines sendError()
 require_once __DIR__ . '/src/middlewares/ContentNegotiationMiddleware.php';
 require_once __DIR__ . '/src/middlewares/CorsMiddleware.php';
+require_once __DIR__ . '/src/middlewares/RequestLoggingMiddleware.php';
 
 // Let route handlers read JSON request bodies.
 $app->addBodyParsingMiddleware();
@@ -58,6 +59,9 @@ $errorMiddleware->setDefaultErrorHandler(
         return $response;
     }
 );
+
+// Log requests and include a request ID in every API response
+$app->add(requestLoggingMiddleware());
 
 // Calling Input Validations before routes
 require_once __DIR__ . '/src/validations/BrandsInputValidator.php';
