@@ -1059,6 +1059,88 @@ paths:
           $ref: "#/components/responses/NotAcceptable"
         "400":
           $ref: "#/components/responses/BadRequest"
+
+  /parts/{id}/converted-price:
+    get:
+      summary: Convert a part's CAD price
+      description: Combines a database part price with an external Frankfurter exchange rate.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: currency
+          required: false
+          schema:
+            type: string
+            enum:
+              - USD
+              - EUR
+              - GBP
+            default: USD
+      responses:
+        "200":
+          description: Original CAD price and converted price.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - name
+                  - original_currency
+                  - original_price
+                  - target_currency
+                  - exchange_rate
+                  - converted_price
+                  - rate_date
+                  - rate_source
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  original_currency:
+                    type: string
+                    enum:
+                      - CAD
+                  original_price:
+                    type: string
+                    example: "749.99"
+                  target_currency:
+                    type: string
+                    enum:
+                      - USD
+                      - EUR
+                      - GBP
+                  exchange_rate:
+                    type: number
+                    exclusiveMinimum: 0
+                  converted_price:
+                    type: string
+                    example: "537.48"
+                  rate_date:
+                    type: string
+                    format: date
+                  rate_source:
+                    type: string
+                    example: Frankfurter
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "502":
+          description: External rate lookup failed, timed out or returned invalid data. No conversion is returned.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+                
 components:
   schemas:
     Part:

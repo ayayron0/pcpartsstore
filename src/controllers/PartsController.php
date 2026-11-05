@@ -436,4 +436,93 @@ class PartsController
             ->withStatus(200)
             ->withHeader('Content-Type', 'application/json');
     }
+
+    // Combine the database price with an external exchange rate
+    public function convertedPrice(Request $request, Response $response, array $args): Response{
+        
+        // Validate the part ID
+        $partId = filter_var($args['id'], FILTER_VALIDATE_INT);
+
+        if ($partId === false || $partId < 1) {
+            return sendError(
+                $this->responseFactory,
+                400,
+                'Invalid part ID'
+            );
+        }
+
+        // Accept only the currency query parameter
+        $params = $request->getQueryParams();
+
+        foreach ($params as $key => $value) {
+            if ($key !== 'currency') {
+                return sendError(
+                    $this->responseFactory,
+                    400,
+                    'Invalid query parameter'
+                );
+            }
+        }
+
+        $currency = $params['currency'] ?? 'USD';
+
+        if (
+            !is_string($currency) ||
+            !in_array($currency, ['USD', 'EUR', 'GBP'], true)
+        ) {
+            return sendError(
+                $this->responseFactory,
+                400,
+                'Currency must be USD, EUR or GBP'
+            );
+        }
+
+        // Get the original CAD price from our database
+        $part = $this->partsModel->findPart($args['id']);
+
+        if (!$part) {
+            return sendError(
+                $this->responseFactory,
+                404,
+                'PC part not found'
+            );
+        }
+
+        // Get the external exchange rate
+        $exchangeService = new ExchangeRateService();
+        $exchange = $exchangeService->getRate($currency);
+
+        if ($exchange === false) {
+            return sendError(
+                $this->responseFactory,
+                502,
+                'Exchange rate service unavailable. Please try again later.'
+            );
+        }
+
+        // Calculate the converted price without changing the database
+        $convertedPrice = (float) $part['price'] * $exchange['rate'];
+
+        $response->getBody()->write(
+            json_encode([
+                'id' => $part['id'],
+                'name' => $part['name'],
+                'original_currency' => 'CAD',
+                'original_price' => $part['price'],
+                'target_currency' => $currency,
+                'exchange_rate' => $exchange['rate'],
+                'converted_price' => number_format(
+                    $convertedPrice,
+                    2,
+                    '.',
+                    ''
+                ),
+                'rate_date' => $exchange['date'],
+                'rate_source' => 'Frankfurter'
+            ])
+        );
+
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
 }
