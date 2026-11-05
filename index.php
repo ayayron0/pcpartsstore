@@ -73,6 +73,9 @@ require_once __DIR__ . '/src/models/PartsModel.php';
 require_once __DIR__ . '/src/models/UsersModel.php';
 require_once __DIR__ . '/src/models/OrdersModel.php';
 
+// Calling external services
+require_once __DIR__ . '/src/services/ExchangeRateService.php';
+
 // Calling controllers
 require_once __DIR__ . '/src/controllers/BrandsController.php';
 require_once __DIR__ . '/src/controllers/PartsController.php';

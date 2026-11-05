@@ -13,6 +13,7 @@ $partsController = new PartsController(
 
 $app->get('/parts', [$partsController, 'index']);
 $app->get('/parts/{id}', [$partsController, 'show']);
+$app->get('/parts/{id}/converted-price', [$partsController, 'convertedPrice']); // new route for currency exchange
 $app->post('/parts', [$partsController, 'store']);
 $app->delete('/parts/{id}', [$partsController, 'delete']);
 $app->patch('/parts/{id}', [$partsController, 'patch']);
