@@ -193,8 +193,8 @@ brandForm.addEventListener("submit", async function (event) {
   const name = document.getElementById("brandName").value.trim();
   const clientErrors = {};
 
-  if (name.length < 2 || name.length > 255) {
-    clientErrors.name = "Name must be between 2 and 255 characters.";
+  if (name.length === 0) {
+    clientErrors.name = "Please enter a brand name.";
   }
 
   if (Object.keys(clientErrors).length > 0) {
@@ -246,8 +246,8 @@ updateBrandForm.addEventListener("submit", async function (event) {
     clientErrors.id = "Brand ID must be a positive integer.";
   }
 
-  if (name.length < 2 || name.length > 255) {
-    clientErrors.name = "Name must be between 2 and 255 characters.";
+  if (name.length === 0) {
+    clientErrors.name = "Please enter a brand name.";
   }
 
   if (Object.keys(clientErrors).length > 0) {
