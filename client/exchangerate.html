@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DoubleBolt — Price Converter</title>
+
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+
+        .box {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        input, select, button {
+            padding: 6px;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            background: #f4f4f4;
+            padding: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Part Price Converter</h1>
+    <p>Convert a stored CAD price using an external exchange rate.</p>
+
+    <div class="box">
+        <form id="converterForm">
+            <label for="partId">Part ID:</label>
+            <input id="partId" type="number"
+                   min="1" step="1" value="1" required>
+
+            <button id="loadBtn" type="button">
+                Load Part
+            </button>
+
+            <!-- Show the database price before conversion -->
+            <p id="originalPrice" role="status"></p>
+
+            <label for="currency">Convert to:</label>
+            <select id="currency">
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+            </select>
+
+            <button id="convertBtn" type="submit" disabled>
+                Convert
+            </button>
+        </form>
+
+        <p id="feedback" role="status"></p>
+
+        <details>
+            <summary>API response</summary>
+            <pre id="result">No conversion yet.</pre>
+        </details>
+    </div>
+
+    <script>
+        const API_URL = new URL("../parts/", window.location.href).href;
+        let loadedPartId = null;
+
+        // Display the database price before converting
+        async function loadOriginalPrice() {
+            const input = document.getElementById("partId");
+            const priceBox = document.getElementById("originalPrice");
+            const convertButton = document.getElementById("convertBtn");
+            const loadButton = document.getElementById("loadBtn");
+
+            if (!input.reportValidity()) {
+                return;
+            }
+
+            const partId = input.value;
+            loadedPartId = null;
+            convertButton.disabled = true;
+            loadButton.disabled = true;
+
+            priceBox.textContent = "Loading original price...";
+            document.getElementById("feedback").textContent = "";
+            document.getElementById("result").textContent =
+                "No conversion yet.";
+
+            try {
+                const response = await fetch(
+                    API_URL + encodeURIComponent(partId),
+                    {
+                        headers: {
+                            Accept: "application/json"
+                        }
+                    }
+                );
+
+                const part = await response.json();
+
+                // Ignore a response if the selected ID has changed
+                if (input.value !== partId) {
+                    return;
+                }
+
+                if (!response.ok) {
+                    priceBox.textContent =
+                        `Error ${response.status}: ${part.error}`;
+                    return;
+                }
+
+                priceBox.textContent =
+                    `${part.name} — Original price: ${part.price} CAD`;
+
+                loadedPartId = partId;
+                convertButton.disabled = false;
+
+            } catch (error) {
+                if (input.value === partId) {
+                    priceBox.textContent =
+                        "Could not load the original price.";
+                }
+            } finally {
+                loadButton.disabled = false;
+            }
+        }
+
+        // Clear the old part when its ID changes
+        document.getElementById("partId").addEventListener(
+            "input",
+            function() {
+                loadedPartId = null;
+                document.getElementById("convertBtn").disabled = true;
+                document.getElementById("originalPrice").textContent =
+                    "Click Load Part to see its CAD price.";
+                document.getElementById("feedback").textContent = "";
+                document.getElementById("result").textContent =
+                    "No conversion yet.";
+            }
+        );
+
+        document.getElementById("loadBtn").onclick = loadOriginalPrice;
+
+        // Clear the old conversion when another currency is selected
+        document.getElementById("currency").addEventListener(
+            "change",
+            function() {
+                document.getElementById("feedback").textContent = "";
+                document.getElementById("result").textContent =
+                    "No conversion yet.";
+            }
+        );
+
+        // Request the composite resource
+        document.getElementById("converterForm").addEventListener(
+            "submit",
+            async function(event) {
+                event.preventDefault();
+
+                const partId = document.getElementById("partId").value;
+                const currency = document.getElementById("currency").value;
+                const feedback = document.getElementById("feedback");
+                const resultBox = document.getElementById("result");
+                const button = document.getElementById("convertBtn");
+
+                if (loadedPartId !== partId) {
+                    feedback.textContent = "Load the part before converting.";
+                    return;
+                }
+
+                feedback.textContent = "Converting...";
+                resultBox.textContent = "";
+                button.disabled = true;
+
+                try {
+                    const url = new URL(
+                        encodeURIComponent(partId) + "/converted-price",
+                        API_URL
+                    );
+                    url.searchParams.set("currency", currency);
+
+                    const response = await fetch(url, {
+                        headers: {
+                            Accept: "application/json"
+                        }
+                    });
+
+                    const result = await response.json();
+
+                    // Ignore results for selections that have changed
+                    if (
+                        document.getElementById("partId").value !== partId ||
+                        document.getElementById("currency").value !== currency
+                    ) {
+                        return;
+                    }
+
+                    if (!response.ok) {
+                        feedback.textContent =
+                            `Error ${response.status}: ${result.error}`;
+                        return;
+                    }
+
+                    document.getElementById("originalPrice").textContent =
+                        `${result.name} — Original price: ` +
+                        `${result.original_price} CAD`;
+
+                    feedback.textContent =
+                        `Converted price: ${result.converted_price} ` +
+                        `${result.target_currency}. ` +
+                        `Rate date: ${result.rate_date}. ` +
+                        `Source: ${result.rate_source}.`;
+
+                    resultBox.textContent = JSON.stringify(result, null, 2);
+
+                } catch (error) {
+                    if (
+                        document.getElementById("partId").value === partId &&
+                        document.getElementById("currency").value === currency
+                    ) {
+                        feedback.textContent =
+                            "Could not connect to the conversion API.";
+                    }
+                } finally {
+                    button.disabled =
+                        loadedPartId !==
+                        document.getElementById("partId").value;
+                }
+            }
+        );
+
+        // Show part 1's CAD price when the page opens
+        loadOriginalPrice();
+    </script>
+</body>
+</html>
