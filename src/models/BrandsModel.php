@@ -23,10 +23,14 @@ class BrandsModel
         string $whereSql,
         array $queryParams,
         int $limit,
-        int $offset
+        int $offset,
+        string $sort,
+        string $direction
     ): array {
         // 4. Fetch the Paginated Data
-        $dataSql = "SELECT * FROM brands $whereSql ORDER BY id ASC LIMIT :limit OFFSET :offset";
+        $dataSql = "SELECT * FROM brands $whereSql
+                ORDER BY $sort $direction, id ASC
+                LIMIT :limit OFFSET :offset";
         $dataStmt = $this->pdo->prepare($dataSql);
 
         // Bind filter and pagination parameters

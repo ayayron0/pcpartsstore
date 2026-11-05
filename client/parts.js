@@ -3,7 +3,7 @@ const BRANDS_URL = "http://localhost/pcpartsstore/brands";
 
 let currentPage = 1;
 const limit = 5;
-let currentNameFilter = "";
+let currentFilter = "";
 
 // Helper to display error or success messages in the UI
 function showFeedback(message, isError = true, detailsObj = null) {
@@ -72,8 +72,8 @@ async function loadParts() {
     url.searchParams.set("page", currentPage);
     url.searchParams.set("limit", limit);
 
-    if (currentNameFilter !== "") {
-      url.searchParams.set("name", currentNameFilter);
+    if (currentFilter !== "") {
+      url.searchParams.set("search", currentFilter);
     }
 
     const response = await fetch(url, {
@@ -136,14 +136,14 @@ function changePage(direction) {
 }
 
 function applyFilter() {
-  currentNameFilter = document.getElementById("filter").value.trim();
+  currentFilter = document.getElementById("filter").value.trim();
   currentPage = 1;
   loadParts();
 }
 
 function resetFilter() {
   document.getElementById("filter").value = "";
-  currentNameFilter = "";
+  currentFilter = "";
   currentPage = 1;
   loadParts();
 }
