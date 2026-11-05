@@ -18,13 +18,17 @@ class PartsModel
         return (int) $countStmt->fetchColumn();
     }
 
-    public function getPaginatedParts(
+    public function getPartsPage(
         string $whereSql,
         array $queryParams,
         int $limit,
-        int $offset
+        int $offset,
+        string $sort,
+        string $direction
     ): array {
-        $dataSql = "SELECT * FROM parts $whereSql ORDER BY id ASC LIMIT :limit OFFSET :offset";
+        $dataSql = "SELECT * FROM parts $whereSql
+                ORDER BY $sort $direction, id ASC
+                LIMIT :limit OFFSET :offset";
         $dataStmt = $this->pdo->prepare($dataSql);
 
         $dataStmt->execute(array_merge($queryParams, [

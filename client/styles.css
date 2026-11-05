@@ -1,0 +1,69 @@
+body {
+  font-family: sans-serif;
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 0 15px;
+}
+.box {
+  border: 1px solid #ccc;
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+}
+.error-box {
+  background: #ffe6e6;
+  border-color: #cc0000;
+  color: #990000;
+  display: none;
+}
+.success-box {
+  background: #e6ffe6;
+  border-color: #009900;
+  color: #006600;
+  display: none;
+}
+#filter {
+  width: 650px;
+  height: 20px;
+  padding: 6px;
+  box-sizing: border-box;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+th,
+td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+th {
+  background-color: #f4f4f4;
+}
+th:last-child,
+td:last-child {
+  text-align: center;
+  vertical-align: middle;
+}
+.form-group {
+  margin-bottom: 10px;
+}
+.form-group label {
+  display: block;
+  font-weight: bold;
+}
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group select {
+  width: 100%;
+  padding: 6px;
+  box-sizing: border-box;
+}
+.pagination {
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

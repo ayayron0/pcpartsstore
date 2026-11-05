@@ -90,7 +90,7 @@ class BrandsController
         $totalPages = ceil($totalItems / $limit);
 
         // 4. Fetch the Paginated Data
-        $parts = $this->brandsModel->getPaginatedBrands(
+        $parts = $this->brandsModel->getBrandsPage(
             $whereSql,
             $queryParams,
             $limit,
