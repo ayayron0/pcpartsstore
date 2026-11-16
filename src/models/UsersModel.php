@@ -58,6 +58,15 @@ class UsersModel
         return $stmt->fetch();
     }
 
+    public function findUserByEmail(string $email): array|false
+    {
+        $stmt = $this->pdo->prepare('SELECT id, email, password_hash, role FROM users WHERE email = :email');
+
+        $stmt->execute(['email' => $email]);
+
+        return $stmt->fetch();
+    }
+
     public function createUser(array $data): string
     {
         $stmt = $this->pdo->prepare(
