@@ -58,10 +58,12 @@ class AuthController
         // Store user id and role in SESSION superglobal
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['role'] = $user['role'];
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 
         // Return success response in JSON payload
         $response->getBody()->write(json_encode([
             'message' => 'Login successful.',
+            'csrf_token' => $_SESSION['csrf_token'],
             'user' => [
                 'id' => $user['id'],
                 'email' => $user['email'],

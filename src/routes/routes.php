@@ -42,15 +42,19 @@ $app->get('/brands/{id}', [$brandsController, 'show']);
 
 // Admin-only brand writes
 $app->post('/brands', [$brandsController, 'store'])
+    ->add(csrfMiddleware($app->getResponseFactory()))
     ->add(adminMiddleware($app->getResponseFactory()));
 
 $app->delete('/brands/{id}', [$brandsController, 'delete'])
+    ->add(csrfMiddleware($app->getResponseFactory()))
     ->add(adminMiddleware($app->getResponseFactory()));
 
 $app->patch('/brands/{id}', [$brandsController, 'patch'])
+    ->add(csrfMiddleware($app->getResponseFactory()))
     ->add(adminMiddleware($app->getResponseFactory()));
 
 $app->put('/brands/{id}', [$brandsController, 'replace'])
+    ->add(csrfMiddleware($app->getResponseFactory()))
     ->add(adminMiddleware($app->getResponseFactory()));
 
 // Orders require login.
@@ -63,7 +67,8 @@ $app->group('/orders', function (
     $group->post('', [$ordersController, 'store']);
     $group->patch('/{id}', [$ordersController, 'patch']);
     $group->delete('/{id}', [$ordersController, 'delete']);
-})->add(authenticationMiddleware($app->getResponseFactory()));
+})->add(csrfMiddleware($app->getResponseFactory()))
+  ->add(authenticationMiddleware($app->getResponseFactory()));
 
 // Public part reads
 $app->get('/parts', [$partsController, 'index']);
@@ -75,15 +80,19 @@ $app->get(
 
 // Admin-only part writes
 $app->post('/parts', [$partsController, 'store'])
+    ->add(csrfMiddleware($app->getResponseFactory()))
     ->add(adminMiddleware($app->getResponseFactory()));
 
 $app->delete('/parts/{id}', [$partsController, 'delete'])
+    ->add(csrfMiddleware($app->getResponseFactory()))
     ->add(adminMiddleware($app->getResponseFactory()));
 
 $app->patch('/parts/{id}', [$partsController, 'patch'])
+    ->add(csrfMiddleware($app->getResponseFactory()))
     ->add(adminMiddleware($app->getResponseFactory()));
 
 $app->put('/parts/{id}', [$partsController, 'replace'])
+    ->add(csrfMiddleware($app->getResponseFactory()))
     ->add(adminMiddleware($app->getResponseFactory()));
 
 // User routes require login.
@@ -95,11 +104,15 @@ $app->group('/users', function (
     $group->get('/{id}', [$usersController, 'show']);
     $group->patch('/{id}', [$usersController, 'patch']);
     $group->delete('/{id}', [$usersController, 'delete']);
-})->add(authenticationMiddleware($app->getResponseFactory()));
+})->add(csrfMiddleware($app->getResponseFactory()))
+  ->add(authenticationMiddleware($app->getResponseFactory()));
+
 
 // Public registration
 $app->post('/users', [$usersController, 'store']);
 
 // Authentication routes
 $app->post('/auth/login', [$authController, 'login']);
-$app->post('/auth/logout', [$authController, 'logout']);
+$app->post('/auth/logout', [$authController, 'logout'])
+    ->add(csrfMiddleware($app->getResponseFactory()))
+    ->add(authenticationMiddleware($app->getResponseFactory()));
