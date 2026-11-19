@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard | DoubleBolt</title>
+
+    <!-- Reuse the storefront theme and add dashboard-specific styles. -->
+    <link rel="stylesheet" href="../store/store.css" />
+    <link rel="stylesheet" href="admin.css" />
+    <script src="admin.js" defer></script>
+  </head>
+
+  <body>
+    <header class="site-header">
+      <div class="header-main container admin-header">
+        <a
+          class="logo"
+          href="../store/index.html"
+          aria-label="DoubleBolt store"
+        >
+          <svg class="double-bolt" viewBox="0 0 46 40" aria-hidden="true">
+            <path d="M13 2 2 23h10L8 38l22-24H18l7-12Z" />
+            <path d="m32 2-9 18h9l-5 18 18-24H35l7-12Z" />
+          </svg>
+          <span class="logo-double">DOUBLE</span
+          ><span class="logo-bolt">BOLT</span>
+        </a>
+
+        <h1 class="admin-title">Admin Dashboard</h1>
+
+        <div class="admin-account">
+          <span id="adminIdentity">Checking session…</span>
+          <button id="logoutButton" type="button" hidden>Sign out</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container admin-main">
+      <p
+        id="pageMessage"
+        class="admin-message"
+        role="status"
+        aria-live="polite"
+      ></p>
+
+      <!-- Shown until the admin signs in. JavaScript will reveal the dashboard
+           only after the API confirms the session has the admin role. -->
+      <section id="loginPanel" class="admin-card" aria-labelledby="loginTitle">
+        <h2 id="loginTitle">Admin sign in</h2>
+
+        <form id="adminLoginForm">
+          <label for="loginEmail">Email address</label>
+          <input
+            id="loginEmail"
+            type="email"
+            autocomplete="username"
+            required
+          />
+
+          <label for="loginPassword">Password</label>
+          <input
+            id="loginPassword"
+            type="password"
+            autocomplete="current-password"
+            required
+          />
+
+          <button class="button button-primary" type="submit">Sign in</button>
+          <p id="loginMessage" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <div id="adminDashboard" hidden>
+        <nav class="admin-tabs" aria-label="Admin sections">
+          <button type="button" data-panel="partsPanel">Parts</button>
+          <button type="button" data-panel="brandsPanel">Brands</button>
+          <button type="button" data-panel="usersPanel">Users</button>
+          <button type="button" data-panel="ordersPanel">Orders</button>
+        </nav>
+
+        <section
+          id="partsPanel"
+          class="admin-card"
+          aria-labelledby="partsTitle"
+        >
+          <h2 id="partsTitle">Parts</h2>
+
+          <form id="partForm">
+            <label for="partName">Name</label>
+            <input id="partName" name="name" required maxlength="255" />
+
+            <label for="partCategory">Category</label>
+            <input id="partCategory" name="category" required maxlength="100" />
+
+            <label for="partBrandId">Brand</label>
+            <select id="partBrandId" name="brand_id" required>
+              <option value="">Select a brand</option>
+            </select>
+
+            <label for="partPrice">Price</label>
+            <input
+              id="partPrice"
+              name="price"
+              type="number"
+              min="0"
+              step="0.01"
+              required
+            />
+
+            <button class="button button-primary" type="submit">
+              Add part
+            </button>
+            <button id="cancelPartEdit" type="button" hidden>
+              Cancel edit
+            </button>
+          </form>
+
+          <div class="admin-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">Name</th>
+                  <th scope="col">Category</th>
+                  <th scope="col">Brand</th>
+                  <th scope="col">Price</th>
+                  <th scope="col">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="partsTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section
+          id="brandsPanel"
+          class="admin-card"
+          aria-labelledby="brandsTitle"
+          hidden
+        >
+          <h2 id="brandsTitle">Brands</h2>
+
+          <form id="brandForm">
+            <label for="brandName">Brand name</label>
+            <input id="brandName" name="name" required maxlength="100" />
+            <button class="button button-primary" type="submit">
+              Add brand
+            </button>
+            <button id="cancelBrandEdit" type="button" hidden>
+              Cancel edit
+            </button>
+          </form>
+
+          <div class="admin-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">Name</th>
+                  <th scope="col">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="brandsTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section
+          id="usersPanel"
+          class="admin-card"
+          aria-labelledby="usersTitle"
+          hidden
+        >
+          <h2 id="usersTitle">Users</h2>
+          <div class="admin-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">First name</th>
+                  <th scope="col">Last name</th>
+                  <th scope="col">Email</th>
+                  <th scope="col">Role</th>
+                  <th scope="col">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section
+          id="ordersPanel"
+          class="admin-card"
+          aria-labelledby="ordersTitle"
+          hidden
+        >
+          <h2 id="ordersTitle">Orders</h2>
+          <div class="admin-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Order ID</th>
+                  <th scope="col">User ID</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="ordersTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>
