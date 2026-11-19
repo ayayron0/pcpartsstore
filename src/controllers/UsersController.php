@@ -48,14 +48,14 @@ class UsersController
 
         if (
             !in_array($sort, $allowedSortFields, true) ||
-            !in_array($direction, $allowedDirections, true)) {
+            !in_array($direction, $allowedDirections, true)
+        ) {
 
             return sendError(
                 $this->responseFactory,
                 400,
                 'Invalid sorting parameter'
             );
-
         }
 
         //validate page number and page size
@@ -172,12 +172,12 @@ class UsersController
         }
 
         // Check required user fields
-        if (!isset($data['first_name'], $data['last_name'], $data['email'])) {
+        if (!isset($data['first_name'], $data['last_name'], $data['email'], $data['password'])) {
             return sendError(
                 $this->responseFactory,
                 422,
                 'Validation Failed',
-                ['fields' => 'First name, last name and email are required.']
+                ['fields' => 'First name, last name, email and password are required.']
             );
         }
 
@@ -203,6 +203,29 @@ class UsersController
                 ['email' => 'A valid email address is required.']
             );
         }
+
+        // Validate password
+        if (!is_string($data['password']) || $data['password'] === '') {
+            return sendError(
+                $this->responseFactory,
+                422,
+                'Validation Failed',
+                ['password' => 'A non-empty password is required.']
+            );
+        }
+
+        if (strlen($data['password']) < 8) {
+            return sendError(
+                $this->responseFactory,
+                422,
+                'Validation Failed',
+                ['password' => 'Password must be at least 8 characters long.']
+            );
+        }
+
+        // Hash password before saving
+        $data['password_hash'] = password_hash($data['password'], PASSWORD_DEFAULT);
+        unset($data['password']);
 
         try {
             $id = $this->usersModel->createUser($data);
