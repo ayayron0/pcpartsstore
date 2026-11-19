@@ -1,5 +1,18 @@
 <?php
 
+// Configure sessions before any session_start() call.
+ini_set('session.use_strict_mode', '1');
+ini_set('session.use_only_cookies', '1');
+
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/pcpartsstore',
+    'secure' => !empty($_SERVER['HTTPS'])
+        && $_SERVER['HTTPS'] !== 'off',
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
+
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
@@ -21,6 +34,7 @@ require_once __DIR__ . '/src/middlewares/CorsMiddleware.php';
 require_once __DIR__ . '/src/middlewares/RequestLoggingMiddleware.php';
 require_once __DIR__ . '/src/middlewares/AuthenticationMiddleware.php';
 require_once __DIR__ . '/src/middlewares/AuthorizationMiddleware.php';
+require_once __DIR__ . '/src/middlewares/CsrfMiddleware.php';
 
 // Let route handlers read JSON request bodies.
 $app->addBodyParsingMiddleware();
