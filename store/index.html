@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shop PC Parts | DoubleBolt</title>
+  <link rel="stylesheet" href="store.css">
+  <script src="store.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#products">Skip to products</a>
+
+  <header class="site-header">
+    <div class="header-main container">
+      <a class="logo" href="./index.html" aria-label="DoubleBolt home">
+        <svg class="double-bolt" viewBox="0 0 46 40" aria-hidden="true">
+          <path d="M13 2 2 23h10L8 38l22-24H18l7-12Z"/>
+          <path d="m32 2-9 18h9l-5 18 18-24H35l7-12Z"/>
+        </svg>
+        <span class="logo-double">DOUBLE</span><span class="logo-bolt">BOLT</span>
+      </a>
+
+      <form id="searchForm" class="search-form" role="search">
+        <label class="sr-only" for="searchInput">Search PC parts</label>
+        <input
+          id="searchInput"
+          name="search"
+          type="search"
+          placeholder="Search parts and models"
+          maxlength="100"
+        >
+        <button type="submit">Search</button>
+      </form>
+
+      <nav class="account-nav" aria-label="Account">
+        <button id="accountButton" type="button">Sign in</button>
+        <a href="./orders.html">My orders</a>
+      </nav>
+    </div>
+
+    <nav class="category-nav" aria-label="Product categories">
+      <div class="container category-links">
+        <a href="./index.html" aria-current="page">All components</a>
+        <a href="?category=GPU">Graphics cards</a>
+        <a href="?category=CPU">Processors</a>
+        <a href="?category=Motherboard">Motherboards</a>
+        <a href="?category=RAM">Memory</a>
+        <a href="?category=Storage">Storage</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="container">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <a href="./index.html">Home</a>
+      <span aria-hidden="true">/</span>
+      <span>PC components</span>
+    </nav>
+
+    <section class="shop-heading" aria-labelledby="shopTitle">
+      <div>
+        <p class="eyebrow">THE COMPONENT SHOP</p>
+        <h1 id="shopTitle">Your next build starts here.</h1>
+        <p class="intro">
+          Find the right parts. Compare your options. Build your way.
+        </p>
+      </div>
+      <p class="price-note">Prices in CAD</p>
+    </section>
+
+    <div class="shop-layout">
+      <aside class="filters" aria-labelledby="filtersTitle">
+        <div class="filter-heading">
+          <h2 id="filtersTitle">Filters</h2>
+          <button id="resetFilters" class="text-button" type="button">
+            Reset
+          </button>
+        </div>
+
+        <form id="filterForm">
+          <fieldset>
+            <legend>Category</legend>
+
+            <label>
+              <input type="radio" name="category" value="" checked>
+              All components
+            </label>
+            <label>
+              <input type="radio" name="category" value="GPU">
+              Graphics cards
+            </label>
+            <label>
+              <input type="radio" name="category" value="CPU">
+              Processors
+            </label>
+            <label>
+              <input type="radio" name="category" value="Motherboard">
+              Motherboards
+            </label>
+            <label>
+              <input type="radio" name="category" value="RAM">
+              Memory
+            </label>
+            <label>
+              <input type="radio" name="category" value="Storage">
+              Storage
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Brand</legend>
+            <label class="sr-only" for="brandFilter">Select brand</label>
+            <select id="brandFilter" name="brand_id">
+              <option value="">All brands</option>
+            </select>
+          </fieldset>
+
+          <button class="button button-primary" type="submit">
+            Apply filters
+          </button>
+        </form>
+      </aside>
+
+      <section id="products" class="catalog" aria-labelledby="catalogTitle">
+        <div class="catalog-toolbar">
+          <div>
+            <h2 id="catalogTitle">All components</h2>
+            <p id="resultCount" class="result-count" role="status">
+              Loading components…
+            </p>
+          </div>
+
+          <div class="sort-control">
+            <label for="sortSelect">Sort by</label>
+            <select id="sortSelect">
+              <option value="id:asc">Default order</option>
+              <option value="price:asc">Price: low to high</option>
+              <option value="price:desc">Price: high to low</option>
+              <option value="name:asc">Name: A–Z</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="catalogMessage" class="catalog-message" role="status" hidden></div>
+
+        <div id="productGrid" class="product-grid" aria-busy="true"></div>
+
+        <nav class="pagination" aria-label="Product pages">
+          <button id="previousPage" type="button" disabled>← Previous</button>
+          <span id="pageInfo">Page 1</span>
+          <button id="nextPage" type="button" disabled>Next →</button>
+        </nav>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-content">
+      <a class="logo" href="./index.html">
+        <span class="logo-double">DOUBLE</span><span class="logo-bolt">BOLT</span>
+      </a>
+      <p>PC components. A better build. A better future.</p>
+      <small>Vanier College Web Services project</small>
+    </div>
+  </footer>
+
+  <dialog id="loginDialog" class="product-dialog auth-dialog"
+          aria-labelledby="loginTitle">
+    <button id="closeLogin" class="button" type="button">Close</button>
+  
+    <p class="eyebrow">YOUR DOUBLEBOLT ACCOUNT</p>
+    <h2 id="loginTitle">Welcome back.</h2>
+    <p class="auth-intro">Sign in to manage your profile and orders.</p>
+  
+    <form id="loginForm">
+      <label for="loginEmail">Email address</label>
+      <input
+        id="loginEmail"
+        type="email"
+        autocomplete="username"
+        required
+        maxlength="255"
+      >
+  
+      <label for="loginPassword">Password</label>
+      <input
+        id="loginPassword"
+        type="password"
+        autocomplete="current-password"
+        required
+      >
+  
+      <p id="loginMessage" role="status" hidden></p>
+  
+      <button id="loginSubmit" class="button button-primary" type="submit">
+        Sign in
+      </button>
+    </form>
+  </dialog>
+
+</body>
+</html>
