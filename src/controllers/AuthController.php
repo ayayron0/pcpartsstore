@@ -43,7 +43,7 @@ class AuthController
         if ($user === false || !is_string($user['password_hash']) || !password_verify($password, $user['password_hash'])) {
             return sendError(
                 $this->responseFactory,
-                401,
+                401, // Unauthenticated
                 'Invalid email or password.'
             );
         }

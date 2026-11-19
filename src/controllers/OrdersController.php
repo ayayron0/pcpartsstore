@@ -26,7 +26,7 @@ class OrdersController
         $user_id = $_GET['user_id'] ?? null;
         $status = $_GET['status'] ?? null;
 
-       // Read sorting parameters
+        // Read sorting parameters
         $sort = $_GET['sort'] ?? 'id';
         $direction = $_GET['direction'] ?? 'asc';
 
@@ -49,14 +49,14 @@ class OrdersController
 
         if (
             !in_array($sort, $allowedSortFields, true) ||
-            !in_array($direction, $allowedDirections, true)) {
+            !in_array($direction, $allowedDirections, true)
+        ) {
 
             return sendError(
                 $this->responseFactory,
                 400,
                 'Invalid sorting parameter'
             );
-
         }
 
         //validate page number and page size
@@ -109,6 +109,13 @@ class OrdersController
         if ($status !== null) {
             $whereClauses[] = 'status = :status';
             $queryParams['status'] = $status;
+        }
+
+        // Customers can only see their own orders.
+        // Admins can see all orders or use the user_id filter.
+        if (($_SESSION['role'] ?? '') !== 'admin') {
+            $whereClauses[] = 'user_id = :authenticated_user_id';
+            $queryParams['authenticated_user_id'] = (int) $_SESSION['user_id'];
         }
 
         $whereSql = '';
@@ -173,6 +180,18 @@ class OrdersController
                 $this->responseFactory,
                 404,
                 'Order not found'
+            );
+        }
+
+        // Ownership check
+        if (
+            ($_SESSION['role'] ?? '') !== 'admin' &&
+            (int) $order['user_id'] !== (int) $_SESSION['user_id']
+        ) {
+            return sendError(
+                $this->responseFactory,
+                403, // Unauthorized
+                'You are not allowed to access this order.'
             );
         }
 

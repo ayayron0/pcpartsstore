@@ -45,8 +45,10 @@ $app->patch('/brands/{id}', [$brandsController, 'patch']);
 $app->put('/brands/{id}', [$brandsController, 'replace']);
 
 // Order routes
-$app->get('/orders', [$ordersController, 'index']);
-$app->get('/orders/{id}', [$ordersController, 'show']);
+$app->get('/orders', [$ordersController, 'index'])
+    ->add(authenticationMiddleware($app->getResponseFactory())); // Checks if user is signed in
+$app->get('/orders/{id}', [$ordersController, 'show'])
+    ->add(authenticationMiddleware($app->getResponseFactory())); // Prevent other customer's order to be seen
 $app->post('/orders', [$ordersController, 'store']);
 $app->patch('/orders/{id}', [$ordersController, 'patch']);
 $app->delete('/orders/{id}', [$ordersController, 'delete']);
@@ -68,4 +70,4 @@ $app->patch('/users/{id}', [$usersController, 'patch']);
 $app->delete('/users/{id}', [$usersController, 'delete']);
 
 // Auth routes
-$app->post('auth/login', [$authController, 'login']);
+$app->post('/auth/login', [$authController, 'login']);

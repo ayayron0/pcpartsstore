@@ -14,10 +14,12 @@ $app->setBasePath('/pcpartsstore');
 // Request Parsing Middleware, Routing Middleware and Content Negotiation Middleware 
 // Global Exception Handler Middleware and JSON Helper Handler
 // CORS Preflight Requests (OPTIONS)
+// Authentican Middleware handles user login
 require_once __DIR__ . '/src/handlers/JsonErrorHandler.php'; // Defines sendError()
 require_once __DIR__ . '/src/middlewares/ContentNegotiationMiddleware.php';
 require_once __DIR__ . '/src/middlewares/CorsMiddleware.php';
 require_once __DIR__ . '/src/middlewares/RequestLoggingMiddleware.php';
+require_once __DIR__ . '/src/middlewares/AuthenticationMiddleware.php';
 
 // Let route handlers read JSON request bodies.
 $app->addBodyParsingMiddleware();
