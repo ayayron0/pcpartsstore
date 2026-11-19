@@ -70,13 +70,14 @@ class UsersModel
     public function createUser(array $data): string
     {
         $stmt = $this->pdo->prepare(
-            'INSERT INTO users (first_name, last_name, email)
-             VALUES (:first_name, :last_name, :email)'
+            'INSERT INTO users (first_name, last_name, email, password_hash)
+             VALUES (:first_name, :last_name, :email, :password_hash)'
         );
         $stmt->execute([
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'],
-            'email' => $data['email']
+            'email' => $data['email'],
+            'password_hash' => $data['password_hash']
         ]);
 
         return $this->pdo->lastInsertId();

@@ -30,6 +30,12 @@ $usersController = new UsersController(
     $app->getResponseFactory()
 );
 
+$authModel = new UsersModel($pdo);
+$authController = new AuthController(
+    $authModel,
+    $app->getResponseFactory()
+);
+
 // Brand routes
 $app->get('/brands', [$brandsController, 'index']);
 $app->get('/brands/{id}', [$brandsController, 'show']);
@@ -60,3 +66,6 @@ $app->get('/users/{id}', [$usersController, 'show']);
 $app->post('/users', [$usersController, 'store']);
 $app->patch('/users/{id}', [$usersController, 'patch']);
 $app->delete('/users/{id}', [$usersController, 'delete']);
+
+// Auth routes
+$app->post('auth/login', [$authController, 'login']);
