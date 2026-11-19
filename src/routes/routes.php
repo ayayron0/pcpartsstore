@@ -1,6 +1,7 @@
 <?php
 
 use Slim\App;
+use Slim\Routing\RouteCollectorProxy;
 
 /** @var App $app */
 /** @var PDO $pdo */
@@ -45,13 +46,13 @@ $app->patch('/brands/{id}', [$brandsController, 'patch']);
 $app->put('/brands/{id}', [$brandsController, 'replace']);
 
 // Order routes
-$app->get('/orders', [$ordersController, 'index'])
-    ->add(authenticationMiddleware($app->getResponseFactory())); // Checks if user is signed in
-$app->get('/orders/{id}', [$ordersController, 'show'])
-    ->add(authenticationMiddleware($app->getResponseFactory())); // Prevent other customer's order to be seen
-$app->post('/orders', [$ordersController, 'store']);
-$app->patch('/orders/{id}', [$ordersController, 'patch']);
-$app->delete('/orders/{id}', [$ordersController, 'delete']);
+$app->group('/orders', function (RouteCollectorProxy $group) use ($ordersController) {
+    $group->get('', [$ordersController, 'index']);
+    $group->get('/{id}', [$ordersController, 'show']);
+    $group->post('', [$ordersController, 'store']);
+    $group->patch('/{id}', [$ordersController, 'patch']);
+    $group->delete('/{id}', [$ordersController, 'delete']);
+})->add(authenticationMiddleware($app->getResponseFactory()));
 
 // Part routes
 $app->get('/parts', [$partsController, 'index']);

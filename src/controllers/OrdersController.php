@@ -215,21 +215,11 @@ class OrdersController
             );
         }
 
-        // Require a positive integer user ID
-        if (
-            !isset($data['user_id']) ||
-            !is_int($data['user_id']) ||
-            $data['user_id'] < 1
-        ) {
-            return sendError(
-                $this->responseFactory,
-                422,
-                'Validation Failed',
-                ['user_id' => 'A positive integer user_id is required.']
-            );
-        }
+        /// Assign the order to the logged-in user
+        $data['user_id'] = (int) $_SESSION['user_id'];
 
-        $status = array_key_exists('status', $data) ? $data['status'] : 'Processing';
+        // New orders always start as Processing
+        $status = 'Processing';
 
         // Validate the order status
         if (!in_array($status, ['Processing', 'Shipped', 'Delivered', 'Cancelled'], true)) {
@@ -316,6 +306,15 @@ class OrdersController
             );
         }
 
+        // Only admins can change an order's status.
+        if (($_SESSION['role'] ?? '') !== 'admin') {
+            return sendError(
+                $this->responseFactory,
+                403,
+                'Only admins can change order status.'
+            );
+        }
+
         $this->ordersModel->updateOrderStatus(
             $args['id'],
             $data['status']
@@ -342,6 +341,25 @@ class OrdersController
                 $this->responseFactory,
                 400,
                 'Invalid order ID'
+            );
+        }
+
+        $order = $this->ordersModel->findOrder($orderId); // Find order of the user
+
+        if ($order === false) {
+            return sendError($this->responseFactory, 404, 'Order not found');
+        }
+
+        // Customers can delete their own orders
+        // Admins can delete any order.
+        if (
+            ($_SESSION['role'] ?? '') !== 'admin' &&
+            (int) $order['user_id'] !== (int) $_SESSION['user_id']
+        ) {
+            return sendError(
+                $this->responseFactory,
+                403,
+                'You are not allowed to delete this order.'
             );
         }
 
