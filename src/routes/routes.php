@@ -116,3 +116,5 @@ $app->post('/auth/login', [$authController, 'login']);
 $app->post('/auth/logout', [$authController, 'logout'])
     ->add(csrfMiddleware($app->getResponseFactory()))
     ->add(authenticationMiddleware($app->getResponseFactory()));
+$app->get('/auth/me', [$authController, 'me'])
+    ->add(authenticationMiddleware($app->getResponseFactory()));

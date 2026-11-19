@@ -109,4 +109,52 @@ class AuthController
         ->withHeader('Cache-Control', 'no-store');
 }
 
+public function me(Request $request, Response $response): Response
+{
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    if (!isset($_SESSION['user_id'])) {
+        return sendError(
+            $this->responseFactory,
+            401,
+            'Authentication Required'
+        );
+    }
+
+    $user = $this->usersModel->findUser(
+        (string) $_SESSION['user_id']
+    );
+
+    if (!$user) {
+        $_SESSION = [];
+
+        return sendError(
+            $this->responseFactory,
+            401,
+            'Authentication Required'
+        );
+    }
+
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+
+    $response->getBody()->write(json_encode([
+        'user' => [
+            'id' => $user['id'],
+            'first_name' => $user['first_name'],
+            'last_name' => $user['last_name'],
+            'email' => $user['email'],
+            'role' => $_SESSION['role'] ?? 'customer',
+        ],
+        'csrf_token' => $_SESSION['csrf_token'],
+    ]));
+
+    return $response
+        ->withHeader('Content-Type', 'application/json')
+        ->withHeader('Cache-Control', 'no-store');
+}
+
 }
