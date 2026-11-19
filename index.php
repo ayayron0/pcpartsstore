@@ -83,6 +83,7 @@ require_once __DIR__ . '/src/controllers/BrandsController.php';
 require_once __DIR__ . '/src/controllers/PartsController.php';
 require_once __DIR__ . '/src/controllers/UsersController.php';
 require_once __DIR__ . '/src/controllers/OrdersController.php';
+require_once __DIR__ . '/src/controllers/AuthController.php';
 
 // Calling Global Route
 require __DIR__ . '/src/routes/routes.php';
