@@ -6,7 +6,7 @@ use Slim\Routing\RouteCollectorProxy;
 /** @var App $app */
 /** @var PDO $pdo */
 
-// Global Route for all endpoints
+// Models and controllers
 $brandsModel = new BrandsModel($pdo);
 $brandsController = new BrandsController(
     $brandsModel,
@@ -31,22 +31,33 @@ $usersController = new UsersController(
     $app->getResponseFactory()
 );
 
-$authModel = new UsersModel($pdo);
 $authController = new AuthController(
-    $authModel,
+    $usersModel,
     $app->getResponseFactory()
 );
 
-// Brand routes
+// Public brand reads
 $app->get('/brands', [$brandsController, 'index']);
 $app->get('/brands/{id}', [$brandsController, 'show']);
-$app->post('/brands', [$brandsController, 'store']);
-$app->delete('/brands/{id}', [$brandsController, 'delete']);
-$app->patch('/brands/{id}', [$brandsController, 'patch']);
-$app->put('/brands/{id}', [$brandsController, 'replace']);
 
-// Order routes
-$app->group('/orders', function (RouteCollectorProxy $group) use ($ordersController) {
+// Admin-only brand writes
+$app->post('/brands', [$brandsController, 'store'])
+    ->add(adminMiddleware($app->getResponseFactory()));
+
+$app->delete('/brands/{id}', [$brandsController, 'delete'])
+    ->add(adminMiddleware($app->getResponseFactory()));
+
+$app->patch('/brands/{id}', [$brandsController, 'patch'])
+    ->add(adminMiddleware($app->getResponseFactory()));
+
+$app->put('/brands/{id}', [$brandsController, 'replace'])
+    ->add(adminMiddleware($app->getResponseFactory()));
+
+// Orders require login.
+// Role and ownership checks are handled in OrdersController.
+$app->group('/orders', function (
+    RouteCollectorProxy $group
+) use ($ordersController) {
     $group->get('', [$ordersController, 'index']);
     $group->get('/{id}', [$ordersController, 'show']);
     $group->post('', [$ordersController, 'store']);
@@ -54,25 +65,41 @@ $app->group('/orders', function (RouteCollectorProxy $group) use ($ordersControl
     $group->delete('/{id}', [$ordersController, 'delete']);
 })->add(authenticationMiddleware($app->getResponseFactory()));
 
-// Part routes
+// Public part reads
 $app->get('/parts', [$partsController, 'index']);
 $app->get('/parts/{id}', [$partsController, 'show']);
-$app->get('/parts/{id}/converted-price', [$partsController, 'convertedPrice']);
-$app->post('/parts', [$partsController, 'store']);
-$app->delete('/parts/{id}', [$partsController, 'delete']);
-$app->patch('/parts/{id}', [$partsController, 'patch']);
-$app->put('/parts/{id}', [$partsController, 'replace']);
+$app->get(
+    '/parts/{id}/converted-price',
+    [$partsController, 'convertedPrice']
+);
 
-// User routes that require a signed-in user
-$app->group('/users', function (RouteCollectorProxy $group) use ($usersController) {
+// Admin-only part writes
+$app->post('/parts', [$partsController, 'store'])
+    ->add(adminMiddleware($app->getResponseFactory()));
+
+$app->delete('/parts/{id}', [$partsController, 'delete'])
+    ->add(adminMiddleware($app->getResponseFactory()));
+
+$app->patch('/parts/{id}', [$partsController, 'patch'])
+    ->add(adminMiddleware($app->getResponseFactory()));
+
+$app->put('/parts/{id}', [$partsController, 'replace'])
+    ->add(adminMiddleware($app->getResponseFactory()));
+
+// User routes require login.
+// Role and ownership checks are handled in UsersController.
+$app->group('/users', function (
+    RouteCollectorProxy $group
+) use ($usersController) {
     $group->get('', [$usersController, 'index']);
     $group->get('/{id}', [$usersController, 'show']);
     $group->patch('/{id}', [$usersController, 'patch']);
     $group->delete('/{id}', [$usersController, 'delete']);
 })->add(authenticationMiddleware($app->getResponseFactory()));
 
-// Public registration route
+// Public registration
 $app->post('/users', [$usersController, 'store']);
 
-// Auth routes
+// Authentication routes
 $app->post('/auth/login', [$authController, 'login']);
+$app->post('/auth/logout', [$authController, 'logout']);
