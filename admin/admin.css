@@ -1,0 +1,169 @@
+.admin-header {
+  flex-wrap: wrap;
+  padding-block: 18px;
+}
+
+.admin-title {
+  margin-left: auto;
+  font-size: 24px;
+  letter-spacing: -0.5px;
+}
+
+.admin-account {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: var(--muted);
+}
+
+.admin-account button {
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  padding: 8px 12px;
+  background: var(--surface-raised);
+}
+
+.admin-main {
+  padding-block: 32px 64px;
+}
+
+.admin-card {
+  margin: 20px 0;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 24px;
+  background: var(--surface);
+}
+
+.admin-card h2 {
+  margin: 0 0 20px;
+  font-size: 20px;
+}
+
+.admin-message {
+  color: var(--muted);
+}
+
+#loginPanel {
+  max-width: 480px;
+  margin-inline: auto;
+}
+
+#adminLoginForm,
+#partForm,
+#brandForm {
+  display: grid;
+  gap: 10px;
+}
+
+#partForm {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 28px;
+}
+
+#partForm button {
+  align-self: end;
+}
+
+#adminLoginForm input,
+#partForm input,
+#partForm select,
+#brandForm input {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  padding: 9px 11px;
+  background: var(--background);
+  color: var(--text);
+}
+
+#adminLoginForm label,
+#partForm label,
+#brandForm label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+#brandForm {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: end;
+  margin-bottom: 28px;
+}
+
+.admin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 14px;
+}
+
+.admin-tabs button {
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  padding: 10px 16px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.admin-tabs button:hover,
+.admin-tabs button[aria-selected="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.admin-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table-wrap th,
+.admin-table-wrap td {
+  border-bottom: 1px solid var(--border);
+  padding: 12px 10px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.admin-table-wrap th {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.admin-table-wrap td button {
+  margin-right: 6px;
+}
+
+@media (max-width: 700px) {
+  .admin-header {
+    gap: 14px;
+  }
+
+  .admin-title {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+
+  .admin-account {
+    margin-left: auto;
+  }
+
+  #partForm {
+    grid-template-columns: 1fr;
+  }
+
+  #brandForm {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-card {
+    padding: 17px;
+  }
+}
