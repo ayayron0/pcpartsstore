@@ -63,12 +63,16 @@ $app->delete('/parts/{id}', [$partsController, 'delete']);
 $app->patch('/parts/{id}', [$partsController, 'patch']);
 $app->put('/parts/{id}', [$partsController, 'replace']);
 
-// User routes
-$app->get('/users', [$usersController, 'index']);
-$app->get('/users/{id}', [$usersController, 'show']);
+// User routes that require a signed-in user
+$app->group('/users', function (RouteCollectorProxy $group) use ($usersController) {
+    $group->get('', [$usersController, 'index']);
+    $group->get('/{id}', [$usersController, 'show']);
+    $group->patch('/{id}', [$usersController, 'patch']);
+    $group->delete('/{id}', [$usersController, 'delete']);
+})->add(authenticationMiddleware($app->getResponseFactory()));
+
+// Public registration route
 $app->post('/users', [$usersController, 'store']);
-$app->patch('/users/{id}', [$usersController, 'patch']);
-$app->delete('/users/{id}', [$usersController, 'delete']);
 
 // Auth routes
 $app->post('/auth/login', [$authController, 'login']);

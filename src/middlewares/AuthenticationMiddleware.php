@@ -13,7 +13,7 @@ function authenticationMiddleware(ResponseFactory $responseFactory)
             session_start();
         }
 
-        // Check if login stored a user ID
+        // Check if login stored a user ID; 401 is unauthorized error code
         if (!isset($_SESSION['user_id'])) {
             return sendError($responseFactory, 401, 'Authentication Required');
         }
