@@ -20,6 +20,7 @@ require_once __DIR__ . '/src/middlewares/ContentNegotiationMiddleware.php';
 require_once __DIR__ . '/src/middlewares/CorsMiddleware.php';
 require_once __DIR__ . '/src/middlewares/RequestLoggingMiddleware.php';
 require_once __DIR__ . '/src/middlewares/AuthenticationMiddleware.php';
+require_once __DIR__ . '/src/middlewares/AuthorizationMiddleware.php';
 
 // Let route handlers read JSON request bodies.
 $app->addBodyParsingMiddleware();
@@ -49,6 +50,7 @@ $errorMiddleware->setDefaultErrorHandler(
             $app->getResponseFactory(),
             $statusCode,
             $message
+            
         );
 
         if ($exception instanceof \Slim\Exception\HttpMethodNotAllowedException) {

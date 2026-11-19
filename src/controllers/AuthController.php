@@ -73,4 +73,38 @@ class AuthController
             ->withStatus(200)
             ->withHeader('Content-Type', 'application/json');
     }
+
+    public function logout(Request $request, Response $response): Response
+{
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    $_SESSION = [];
+
+    if (ini_get('session.use_cookies')) {
+        $params = session_get_cookie_params();
+
+        setcookie(session_name(), '', [
+            'expires' => time() - 3600,
+            'path' => $params['path'],
+            'domain' => $params['domain'],
+            'secure' => $params['secure'],
+            'httponly' => $params['httponly'],
+            'samesite' => $params['samesite'] ?? 'Lax',
+        ]);
+    }
+
+    session_destroy();
+
+    $response->getBody()->write(json_encode([
+        'message' => 'Logout successful.'
+    ]));
+
+    return $response
+        ->withStatus(200)
+        ->withHeader('Content-Type', 'application/json')
+        ->withHeader('Cache-Control', 'no-store');
+}
+
 }
