@@ -85,6 +85,11 @@ class UsersController
             );
         }
 
+        // Only admins can view the full users list.
+        if (($_SESSION['role'] ?? '') !== 'admin') {
+            return sendError($this->responseFactory, 403, 'Only admins can view all users.');
+        }
+
         //optional first-name or last-name filter
         $whereSql = '';
         $queryParams = [];
@@ -149,6 +154,15 @@ class UsersController
                 404,
                 'User not found'
             );
+        }
+
+        // Users can view their own profile;
+        // Admins can view any profile.
+        if (
+            ($_SESSION['role'] ?? '') !== 'admin' &&
+            (int) $user['id'] !== (int) $_SESSION['user_id']
+        ) {
+            return sendError($this->responseFactory, 403, 'You are not allowed to view this user.');
         }
 
         $response->getBody()->write(json_encode($user));
@@ -293,7 +307,7 @@ class UsersController
         }
 
         $updates = [];
-        $params = ['id' => $args['id']];
+        $params = ['id' => $userId];
 
         foreach (['first_name' => 100, 'last_name' => 100, 'email' => 255] as $field => $maxLength) {
             if (!array_key_exists($field, $data)) {
@@ -323,12 +337,26 @@ class UsersController
             );
         }
 
-        // Return 404 if the user does not exist
-        if (!$this->usersModel->userExists($args['id'])) {
+        // Find the user and return 404 if they do not exist
+        $user = $this->usersModel->findUser((string) $userId);
+
+        if (!$user) {
             return sendError(
                 $this->responseFactory,
                 404,
                 'User not found'
+            );
+        }
+
+        // Users can update their own profile; admins can update any profile.
+        if (
+            ($_SESSION['role'] ?? '') !== 'admin' &&
+            (int) $user['id'] !== (int) $_SESSION['user_id']
+        ) {
+            return sendError(
+                $this->responseFactory,
+                403,
+                'You are not allowed to update this user.'
             );
         }
 
@@ -368,6 +396,11 @@ class UsersController
                 400,
                 'Invalid user ID'
             );
+        }
+
+        // Only admins can delete user accounts.
+        if (($_SESSION['role'] ?? '') !== 'admin') {
+            return sendError($this->responseFactory, 403, 'Only admins can delete users.');
         }
 
         try {
