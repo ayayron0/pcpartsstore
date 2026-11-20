@@ -11,6 +11,7 @@ const adminIdentity = document.getElementById("adminIdentity");
 const logoutButton = document.getElementById("logoutButton");
 const partForm = document.getElementById("partForm");
 const brandForm = document.getElementById("brandForm");
+const adminFooter = document.getElementById("adminFooter");
 
 let csrfToken = null;
 let editingPartId = null;
@@ -61,21 +62,24 @@ function showSignedOut() {
   adminIdentity.textContent = "Not signed in";
   logoutButton.hidden = true;
   dashboard.hidden = true;
+  adminFooter.hidden = true;
   loginPanel.hidden = false;
 }
 
 function showUserSession(user, token) {
   csrfToken = token;
-  logoutButton.hidden = false;
-  adminIdentity.textContent = `Signed in as ${user.email}`;
 
   if (user.role !== "admin") {
+    adminFooter.hidden = true;
     window.location.replace("../store/index.html");
     return;
   }
 
+  logoutButton.hidden = false;
+  adminIdentity.textContent = `Signed in as ${user.email}`;
   loginPanel.hidden = true;
   dashboard.hidden = false;
+  adminFooter.hidden = false;
   showLoginMessage("");
   showPageMessage("");
 
