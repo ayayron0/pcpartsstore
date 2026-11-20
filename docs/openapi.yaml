@@ -988,7 +988,7 @@ paths:
         - sessionCookie: []
           csrfToken: []
       description: >
-        A user may delete their own account; an admin may delete any account. A valid CSRF token is required.
+        Only admins may delete user accounts. A valid CSRF token is required. Users with orders cannot be deleted (409).
       responses:
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -1138,57 +1138,67 @@ paths:
         "406":
           $ref: "#/components/responses/NotAcceptable"
     post:
-      summary: Create order
+      summary: Place an order with items
       security:
-        - sessionCookie: []
-          csrfToken: []
-      description: >
-        Creates an order for the authenticated user; user_id is assigned by the server.
+      - sessionCookie: []
+        csrfToken: []
+      description: Creates an order for the signed-in user, always with Processing status. The server
+        reads and locks current component prices and saves purchase prices with all items in one transaction.
+        An unavailable item rolls back the order and its items. The same user and checkout_key with identical
+        normalized items return the original order; different items using that key return 409. Concurrent
+        identical submissions create one order. No stock reservation or payment processing is implemented.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                status:
-                  type: string
-                  enum:
-                    - Processing
-                    - Shipped
-                    - Delivered
-                    - Cancelled
-                  default: Processing
+              $ref: '#/components/schemas/CheckoutRequest'
+            example:
+              checkout_key: build3-checkout-test-0001
+              items:
+              - part_id: 1
+                quantity: 2
       responses:
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "201":
-          description: Created
+        '201':
+          description: New order committed; replayed is false.
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - message
-                  - id
-                properties:
-                  message:
-                    type: string
-                  id:
-                    type: string
-                    description: PDO lastInsertId returns a string
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationFailed"
-        "406":
-          $ref: "#/components/responses/NotAcceptable"
-        "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
+                $ref: '#/components/schemas/CheckoutResponse'
+        '200':
+          description: Existing order returned for an identical retry; replayed is true.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '503':
+          description: Database lock timeout or deadlock. The transaction is rolled back. Retry the same
+            checkout key and items.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                enum:
+                - 1
+              description: Wait one second before retrying.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /orders/{id}:
     parameters:
       - name: id
@@ -1198,44 +1208,29 @@ paths:
           type: integer
           minimum: 1
     get:
-      summary: Read order
+      summary: Read an order with purchased items
       security:
-        - sessionCookie: []
-      description: >
-        A customer may read their own order; an admin may read any order.
+      - sessionCookie: []
+      description: Customers may read only their own order; admins may read any order. Ownership is checked
+        before item details are returned. New checkout orders include saved purchase prices. Legacy prices
+        remain null rather than using current prices.
       responses:
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "200":
-          description: Existing row
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '200':
+          description: Order with items and saved-price totals.
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - id
-                  - user_id
-                  - status
-                properties:
-                  id:
-                    type: integer
-                  user_id:
-                    type: integer
-                  status:
-                    type: string
-                    enum:
-                      - Processing
-                      - Shipped
-                      - Delivered
-                      - Cancelled
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "406":
-          $ref: "#/components/responses/NotAcceptable"
-        "400":
-          $ref: "#/components/responses/BadRequest"
+                $ref: '#/components/schemas/OrderDetails'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '400':
+          $ref: '#/components/responses/BadRequest'
     patch:
       summary: Update order
       security:
@@ -1292,8 +1287,8 @@ paths:
         - sessionCookie: []
           csrfToken: []
       description: >
-        Requires an authenticated session and a valid CSRF token. The controller
-        must enforce the intended order ownership or admin permission policy.
+        Customers may delete their own order; admins may delete any order. A valid
+        CSRF token is required. Orders with items cannot be deleted (409).
       responses:
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -1415,6 +1410,123 @@ components:
       name: X-CSRF-Token
       description: CSRF token returned by login or the current-session endpoint.
   schemas:
+    CheckoutRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - checkout_key
+      - items
+      properties:
+        checkout_key:
+          type: string
+          minLength: 16
+          maxLength: 64
+          pattern: ^[A-Za-z0-9_-]{16,64}$
+          description: Generate once per checkout attempt. Retry the identical cart with the same key.
+            Keys are scoped to the authenticated user.
+        items:
+          type: array
+          minItems: 1
+          maxItems: 50
+          description: Each part_id must occur once. Item order does not affect retry matching. Prices,
+            status and user_id are supplied by the server.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+            - part_id
+            - quantity
+            properties:
+              part_id:
+                type: integer
+                minimum: 1
+              quantity:
+                type: integer
+                minimum: 1
+                maximum: 99
+    CheckoutResponse:
+      type: object
+      required:
+      - message
+      - id
+      - replayed
+      properties:
+        message:
+          type: string
+        id:
+          type: string
+          description: Created or previously created order ID.
+          example: '1013'
+        replayed:
+          type: boolean
+          description: True when returning the order already created with this checkout key.
+    OrderLineItem:
+      type: object
+      required:
+      - part_id
+      - name
+      - quantity
+      - unit_price
+      - line_total
+      properties:
+        part_id:
+          type: integer
+        name:
+          type: string
+          description: Current component name from the linked parts record.
+        quantity:
+          type: integer
+          minimum: 1
+        unit_price:
+          type: &id001
+          - string
+          - 'null'
+          description: Exact CAD decimal string, or null when a historical purchase price was not recorded.
+          examples: &id002
+          - '749.99'
+          - null
+        line_total:
+          type: *id001
+          description: Exact CAD decimal string, or null when a historical purchase price was not recorded.
+          examples: *id002
+    OrderDetails:
+      type: object
+      required:
+      - id
+      - user_id
+      - status
+      - items
+      - currency
+      - total
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        status:
+          type: string
+          enum:
+          - Processing
+          - Shipped
+          - Delivered
+          - Cancelled
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderLineItem'
+        currency:
+          type: string
+          enum:
+          - CAD
+        total:
+          type:
+          - string
+          - 'null'
+          description: Sum of saved unit prices times quantities. Null for empty orders or any missing
+            historical purchase price.
+          examples:
+          - '1499.98'
+          - null
     Part:
       type: object
       required:
@@ -1663,3 +1775,4 @@ components:
             error: Validation Failed
             details:
               name: Name is required and must be a string.
+
