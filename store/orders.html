@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My orders | DoubleBolt</title>
+  <link rel="stylesheet" href="store.css">
+  <link rel="stylesheet" href="account.css">
+  <script src="orders.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-main container">
+      <a class="logo" href="./index.html" aria-label="DoubleBolt home">
+        <svg class="double-bolt" viewBox="0 0 46 40" aria-hidden="true">
+          <path d="M13 2 2 23h10L8 38l22-24H18l7-12Z"/>
+          <path d="m32 2-9 18h9l-5 18 18-24H35l7-12Z"/>
+        </svg>
+        <span class="logo-double">DOUBLE</span>
+        <span class="logo-bolt">BOLT</span>
+      </a>
+
+      <nav class="account-nav" aria-label="Account">
+        <a href="./index.html">Shop components</a>
+        <a href="./account.html">My account</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="account-main">
+    <a href="./index.html">← Back to shop</a>
+
+    <section class="account-card" aria-labelledby="ordersTitle">
+      <p class="eyebrow">YOUR DOUBLEBOLT ACCOUNT</p>
+      <h1 id="ordersTitle">My orders.</h1>
+      <p id="ordersIdentity">Checking your session…</p>
+
+      <p id="ordersMessage"
+         class="account-message"
+         role="status"
+         aria-live="polite"
+         hidden></p>
+
+      <div id="signedOutLinks" class="account-links" hidden>
+        <a href="./index.html">Return to shop to sign in</a>
+      </div>
+
+      <button id="retryButton" class="button" type="button" hidden>
+        Try again
+      </button>
+
+      <div id="ordersContent" hidden>
+        <form id="orderFilter" class="account-form">
+          <label for="statusFilter">Order status</label>
+          <select id="statusFilter">
+            <option value="">All statuses</option>
+            <option value="Processing">Processing</option>
+            <option value="Shipped">Shipped</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+          <button class="button button-primary" type="submit">
+            Apply filter
+          </button>
+        </form>
+
+        <p id="orderCount" role="status"></p>
+        <div id="ordersList" aria-busy="false"></div>
+
+        <nav class="pagination" aria-label="Order pages">
+          <button id="previousPage" type="button" disabled>
+            ← Previous
+          </button>
+          <span id="pageInfo">Page 1</span>
+          <button id="nextPage" type="button" disabled>
+            Next →
+          </button>
+        </nav>
+      </div>
+    </section>
+
+    <section id="orderDetails"
+             class="account-card"
+             aria-labelledby="detailTitle"
+             aria-busy="false"
+             hidden>
+      <h2 id="detailTitle">Order details</h2>
+      <p id="detailMessage" role="status" aria-live="polite"></p>
+      <button id="closeDetails" class="button" type="button">
+        Close details
+      </button>
+    </section>
+  </main>
+</body>
+</html>

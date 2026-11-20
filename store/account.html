@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My account | DoubleBolt</title>
+  <link rel="stylesheet" href="store.css">
+  <link rel="stylesheet" href="account.css">
+  <script src="account.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-main container">
+      <a class="logo" href="./index.html" aria-label="DoubleBolt home">
+        <svg class="double-bolt" viewBox="0 0 46 40" aria-hidden="true">
+          <path d="M13 2 2 23h10L8 38l22-24H18l7-12Z"/>
+          <path d="m32 2-9 18h9l-5 18 18-24H35l7-12Z"/>
+        </svg>
+        <span class="logo-double">DOUBLE</span>
+        <span class="logo-bolt">BOLT</span>
+      </a>
+
+      <nav class="account-nav" aria-label="Account">
+        <a href="./index.html">Shop components</a>
+        <a href="./orders.html">My orders</a>
+        <a id="adminLink" href="../admin/admin.html" hidden>Admin</a>
+        <button id="logoutButton" type="button" hidden>Sign out</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="account-main">
+    <a href="./index.html">← Back to shop</a>
+
+    <section class="account-card" aria-labelledby="accountTitle">
+      <p class="eyebrow">YOUR DOUBLEBOLT ACCOUNT</p>
+      <h1 id="accountTitle">My account.</h1>
+      <p id="accountIdentity">Checking your session…</p>
+
+      <p id="accountMessage"
+         class="account-message"
+         role="status"
+         aria-live="polite"
+         hidden></p>
+
+      <form id="accountForm" class="account-form" hidden>
+        <label for="firstName">First name</label>
+        <input id="firstName" name="first_name"
+               autocomplete="given-name" maxlength="100" required>
+
+        <label for="lastName">Last name</label>
+        <input id="lastName" name="last_name"
+               autocomplete="family-name" maxlength="100" required>
+
+        <label for="email">Email address</label>
+        <input id="email" name="email" type="email"
+               autocomplete="email" maxlength="255" required>
+
+        <button id="saveButton"
+                class="button button-primary" type="submit">
+          Save changes
+        </button>
+      </form>
+
+      <button id="retryButton" class="button" type="button" hidden>
+        Try again
+      </button>
+
+      <div id="signedOutLinks" class="account-links" hidden>
+        <a href="./index.html">Return to shop to sign in</a>
+        <a href="./register.html">Create an account</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
