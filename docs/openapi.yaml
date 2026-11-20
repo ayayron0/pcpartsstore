@@ -1,14 +1,80 @@
 openapi: 3.2.1
 info:
   title: DoubleBolt API
-  version: 1.0.0
-  description:
-    Database-backed reads and existing parts/brands write handlers, plus users/orders CRUD.
-    Cart, checkout, inventory administration and authentication remain planned.
+  version: 1.1.0
+  description: >
+    Database-backed parts, brands, users, and orders API. Supports session
+    authentication, role and ownership checks, JSON requests and responses,
+    filtering, sorting, and pagination. XML and YAML representations are not
+    currently supported.
 servers:
   - url: http://localhost/pcpartsstore
     description: Wampoon; adjust port to match Apache.
 paths:
+  /auth/login:
+    post:
+      summary: Sign in
+      description: Verifies credentials, creates a session, and returns the CSRF token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthLoginRequest"
+      responses:
+        "200":
+          description: Login successful; the server also sets the session cookie.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthLoginResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /auth/me:
+    get:
+      summary: Get the signed-in user's session
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Current user and CSRF token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSessionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+  /auth/logout:
+    post:
+      summary: Sign out
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      responses:
+        "200":
+          description: Session ended.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
   /parts:
     get:
       summary: List PC parts
@@ -43,6 +109,28 @@ paths:
             minimum: 1
             maximum: 50
             default: 5
+        - in: query
+          name: search
+          required: false
+          description: Search part names or categories; the search matches either field.
+          schema:
+            type: string
+        - in: query
+          name: sort
+          required: false
+          description: Field used to sort the parts.
+          schema:
+            type: string
+            enum: [id, name, category, brand_id, price]
+            default: id
+        - in: query
+          name: direction
+          required: false
+          description: Sort direction for the selected field.
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
       responses:
         "200":
           description: Paginated parts collection.
@@ -83,6 +171,11 @@ paths:
           $ref: "#/components/responses/NotAcceptable"
     post:
       summary: Create part (existing handler)
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      description: >
+        Requires an authenticated admin session and a valid CSRF token.
       requestBody:
         required: true
         content:
@@ -108,6 +201,10 @@ paths:
                   type: number
                   example: 481.96
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "201":
           description: Created
           content:
@@ -122,8 +219,8 @@ paths:
                     type: string
                     example: New PC part added
                   id:
-                    type: integer
-                    example: 3
+                    type: string
+                    example: "3"
                     description: PDO lastInsertId returns a string
         "400":
           $ref: "#/components/responses/BadRequest"
@@ -164,6 +261,11 @@ paths:
           $ref: "#/components/responses/NotAcceptable"
     patch:
       summary: Update part price (existing handler)
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      description: >
+        Requires an authenticated admin session and a valid CSRF token.
       parameters:
         - name: id
           in: path
@@ -184,6 +286,10 @@ paths:
                   type: number
                   example: 425.82
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "200":
           description: Updated
           content:
@@ -206,6 +312,11 @@ paths:
           $ref: "#/components/responses/ValidationFailed"
     delete:
       summary: Delete part (existing handler)
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      description: >
+        Requires an authenticated admin session and a valid CSRF token. A part referenced by an order cannot be deleted.
       parameters:
         - name: id
           in: path
@@ -214,6 +325,12 @@ paths:
             type: integer
             minimum: 1
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "200":
           description: Deleted
           content:
@@ -230,6 +347,11 @@ paths:
           $ref: "#/components/responses/NotAcceptable"
     put:
       summary: Replace a part
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      description: >
+        Requires an authenticated admin session and a valid CSRF token.
       parameters:
         - name: id
           in: path
@@ -264,6 +386,10 @@ paths:
                   example: 596.98
                   minimum: 0
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "200":
           description: Updated successfully.
           content:
@@ -311,6 +437,22 @@ paths:
             minimum: 1
             maximum: 50
             default: 5
+        - in: query
+          name: sort
+          required: false
+          description: Field used to sort the brands.
+          schema:
+            type: string
+            enum: [id, name]
+            default: id
+        - in: query
+          name: direction
+          required: false
+          description: Sort direction for the selected field.
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
       responses:
         "200":
           description: Paginated brands collection.
@@ -345,6 +487,11 @@ paths:
           $ref: "#/components/responses/NotAcceptable"
     post:
       summary: Create brand (existing handler)
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      description: >
+        Requires an authenticated admin session and a valid CSRF token.
       requestBody:
         required: true
         content:
@@ -358,6 +505,10 @@ paths:
                   type: string
                   example: ASUS
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "201":
           description: Created
           content:
@@ -409,6 +560,11 @@ paths:
           $ref: "#/components/responses/NotAcceptable"
     patch:
       summary: Update brand name (existing handler)
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      description: >
+        Requires an authenticated admin session and a valid CSRF token.
       parameters:
         - name: id
           in: path
@@ -429,6 +585,10 @@ paths:
                   type: string
                   example: Corsair
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "200":
           description: Updated
           content:
@@ -451,6 +611,11 @@ paths:
           $ref: "#/components/responses/ValidationFailed"
     delete:
       summary: Delete brand (existing handler)
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      description: >
+        Requires an authenticated admin session and a valid CSRF token. A brand referenced by a part cannot be deleted.
       parameters:
         - name: id
           in: path
@@ -459,6 +624,12 @@ paths:
             type: integer
             minimum: 1
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "200":
           description: Deleted
           content:
@@ -475,6 +646,11 @@ paths:
           $ref: "#/components/responses/NotAcceptable"
     put:
       summary: Replace a brand
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      description: >
+        Requires an authenticated admin session and a valid CSRF token.
       parameters:
         - name: id
           in: path
@@ -495,6 +671,10 @@ paths:
                   type: string
                   example: Crucial
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "200":
           description: Updated successfully.
           content:
@@ -518,6 +698,10 @@ paths:
   /users:
     get:
       summary: List users
+      security:
+        - sessionCookie: []
+      description: >
+        Admin role required to list users.
       parameters:
         - in: query
           name: name
@@ -565,6 +749,10 @@ paths:
               - desc
             default: asc
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "200":
           description: Collection, possibly empty
           content:
@@ -604,6 +792,7 @@ paths:
                         - first_name
                         - last_name
                         - email
+                        - role
                       properties:
                         id:
                           type: integer
@@ -617,6 +806,9 @@ paths:
                           type: string
                           format: email
                           maxLength: 255
+                        role:
+                          type: string
+                          enum: [admin, customer]
         "400":
           $ref: "#/components/responses/BadRequest"
         "406":
@@ -633,6 +825,7 @@ paths:
                 - first_name
                 - last_name
                 - email
+                - password
               properties:
                 first_name:
                   type: string
@@ -646,6 +839,11 @@ paths:
                   type: string
                   format: email
                   maxLength: 255
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  description: Minimum length must match UsersController validation.
       responses:
         "201":
           description: Created
@@ -676,7 +874,7 @@ paths:
           $ref: "#/components/responses/NotAcceptable"
         "415":
           $ref: "#/components/responses/UnsupportedMediaType"
-          
+
   /users/{id}:
     parameters:
       - name: id
@@ -687,7 +885,15 @@ paths:
           minimum: 1
     get:
       summary: Read user
+      security:
+        - sessionCookie: []
+      description: >
+        A user may read their own profile; an admin may read any profile.
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "200":
           description: Existing row
           content:
@@ -720,6 +926,11 @@ paths:
           $ref: "#/components/responses/BadRequest"
     patch:
       summary: Update user
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      description: >
+        A user may update their own profile; an admin may update any profile. A valid CSRF token is required.
       requestBody:
         required: true
         content:
@@ -742,6 +953,10 @@ paths:
                   format: email
                   maxLength: 255
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "200":
           description: Updated, including unchanged values
           content:
@@ -769,7 +984,16 @@ paths:
           $ref: "#/components/responses/UnsupportedMediaType"
     delete:
       summary: Delete user
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      description: >
+        A user may delete their own account; an admin may delete any account. A valid CSRF token is required.
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "200":
           description: Deleted
           content:
@@ -794,6 +1018,10 @@ paths:
   /orders:
     get:
       summary: List orders
+      security:
+        - sessionCookie: []
+      description: >
+        Customers see their own orders; admins may see all orders and filter by user_id.
       parameters:
         - in: query
           name: user_id
@@ -853,6 +1081,8 @@ paths:
               - desc
             default: asc
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "200":
           description: Paginated orders collection, possibly empty.
           content:
@@ -909,18 +1139,18 @@ paths:
           $ref: "#/components/responses/NotAcceptable"
     post:
       summary: Create order
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      description: >
+        Creates an order for the authenticated user; user_id is assigned by the server.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - user_id
               properties:
-                user_id:
-                  type: integer
-                  minimum: 1
                 status:
                   type: string
                   enum:
@@ -930,6 +1160,10 @@ paths:
                     - Cancelled
                   default: Processing
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "201":
           description: Created
           content:
@@ -965,7 +1199,15 @@ paths:
           minimum: 1
     get:
       summary: Read order
+      security:
+        - sessionCookie: []
+      description: >
+        A customer may read their own order; an admin may read any order.
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "200":
           description: Existing row
           content:
@@ -996,6 +1238,11 @@ paths:
           $ref: "#/components/responses/BadRequest"
     patch:
       summary: Update order
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      description: >
+        Only admins may change order status. A valid CSRF token is required.
       requestBody:
         required: true
         content:
@@ -1016,6 +1263,10 @@ paths:
               required:
                 - status
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "200":
           description: Updated, including unchanged values
           content:
@@ -1037,7 +1288,17 @@ paths:
           $ref: "#/components/responses/UnsupportedMediaType"
     delete:
       summary: Delete order
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      description: >
+        Requires an authenticated session and a valid CSRF token. The controller
+        must enforce the intended order ownership or admin permission policy.
       responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "200":
           description: Deleted
           content:
@@ -1140,8 +1401,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-                
+
 components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: PHPSESSID
+      description: PHP session cookie; confirm the name against session_name().
+    csrfToken:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+      description: CSRF token returned by login or the current-session endpoint.
   schemas:
     Part:
       type: object
@@ -1238,6 +1510,67 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Brand"
+    AuthLoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    AuthUser:
+      type: object
+      required: [id, email, role]
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [admin, customer]
+    AuthLoginResponse:
+      type: object
+      required: [message, csrf_token, user]
+      properties:
+        message:
+          type: string
+          example: Login successful.
+        csrf_token:
+          type: string
+        user:
+          $ref: "#/components/schemas/AuthUser"
+    AuthSessionResponse:
+      type: object
+      required: [user, csrf_token]
+      properties:
+        user:
+          type: object
+          required: [id, first_name, last_name, email, role]
+          properties:
+            id:
+              type: integer
+            first_name:
+              type: string
+            last_name:
+              type: string
+            email:
+              type: string
+              format: email
+            role:
+              type: string
+              enum: [admin, customer]
+        csrf_token:
+          type: string
+    MessageResponse:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
     Error:
       type: object
       required:
@@ -1256,6 +1589,33 @@ components:
             type: string
           description: Field-level validation errors.
   responses:
+    Unauthorized:
+      description: Authentication is required or the session is invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            status: 401
+            error: Authentication Required
+    Forbidden:
+      description: The user lacks permission or the CSRF token is missing or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            status: 403
+            error: Permission denied.
+    Conflict:
+      description: The operation conflicts with existing data or a database relationship.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            status: 409
+            error: The operation conflicts with existing data.
     BadRequest:
       description: Malformed JSON, invalid path IDs or invalid query parameters.
       content:
