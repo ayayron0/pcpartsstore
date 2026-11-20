@@ -23,8 +23,8 @@
             <path d="M13 2 2 23h10L8 38l22-24H18l7-12Z" />
             <path d="m32 2-9 18h9l-5 18 18-24H35l7-12Z" />
           </svg>
-          <span class="logo-double">DOUBLE</span
-          ><span class="logo-bolt">BOLT</span>
+          <span class="logo-double">DOUBLE</span>
+          <span class="logo-bolt">BOLT</span>
         </a>
 
         <h1 class="admin-title">Admin Dashboard</h1>
@@ -45,7 +45,7 @@
         hidden
       ></p>
 
-      <!-- Shown until the admin signs in. JavaScript will reveal the dashboard
+      <!-- Shown until the admin signs in. JavaScript reveals the dashboard
            only after the API confirms the session has the admin role. -->
       <section id="loginPanel" class="admin-card" aria-labelledby="loginTitle">
         <h2 id="loginTitle">Admin sign in</h2>
@@ -112,15 +112,46 @@
             <button class="button button-primary" type="submit">
               Add part
             </button>
-            <button
-              id="cancelPartEdit"
-              class="button"
-              type="button"
-              hidden
-            >
+            <button id="cancelPartEdit" class="button" type="button" hidden>
               Cancel edit
             </button>
           </form>
+
+          <div class="collection-controls">
+            <input
+              id="partsSearch"
+              type="search"
+              placeholder="Search name or category"
+            />
+
+            <select id="partsBrandFilter" aria-label="Filter by brand">
+              <option value="">All brands</option>
+            </select>
+
+            <select id="partsSortBy" aria-label="Sort parts by">
+              <option value="id">Sort: ID</option>
+              <option value="name">Name</option>
+              <option value="category">Category</option>
+              <option value="brand_id">Brand ID</option>
+              <option value="price">Price</option>
+            </select>
+
+            <select id="partsSortDirection" aria-label="Parts sort direction">
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+
+            <button
+              class="button button-primary"
+              id="partsSearchButton"
+              type="button"
+            >
+              Search
+            </button>
+            <button class="button" id="partsResetButton" type="button">
+              Reset
+            </button>
+          </div>
 
           <div class="admin-table-wrap">
             <table>
@@ -136,6 +167,14 @@
               </thead>
               <tbody id="partsTableBody"></tbody>
             </table>
+          </div>
+
+          <div class="collection-pagination">
+            <button class="button" id="partsPrevBtn" type="button">
+              Previous
+            </button>
+            <span id="partsPageInfo">Page 1 of 1</span>
+            <button class="button" id="partsNextBtn" type="button">Next</button>
           </div>
         </section>
 
@@ -153,15 +192,39 @@
             <button class="button button-primary" type="submit">
               Add brand
             </button>
-            <button
-              id="cancelBrandEdit"
-              class="button"
-              type="button"
-              hidden
-            >
+            <button id="cancelBrandEdit" class="button" type="button" hidden>
               Cancel edit
             </button>
           </form>
+
+          <div class="collection-controls">
+            <input
+              id="brandsSearch"
+              type="search"
+              placeholder="Search brand name"
+            />
+
+            <select id="brandsSortBy" aria-label="Sort brands by">
+              <option value="id">Sort: ID</option>
+              <option value="name">Name</option>
+            </select>
+
+            <select id="brandsSortDirection" aria-label="Brands sort direction">
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+
+            <button
+              class="button button-primary"
+              id="brandsSearchButton"
+              type="button"
+            >
+              Search
+            </button>
+            <button class="button" id="brandsResetButton" type="button">
+              Reset
+            </button>
+          </div>
 
           <div class="admin-table-wrap">
             <table>
@@ -175,6 +238,16 @@
               <tbody id="brandsTableBody"></tbody>
             </table>
           </div>
+
+          <div class="collection-pagination">
+            <button class="button" id="brandsPrevBtn" type="button">
+              Previous
+            </button>
+            <span id="brandsPageInfo">Page 1 of 1</span>
+            <button class="button" id="brandsNextBtn" type="button">
+              Next
+            </button>
+          </div>
         </section>
 
         <section
@@ -184,6 +257,37 @@
           hidden
         >
           <h2 id="usersTitle">Users</h2>
+
+          <div class="collection-controls">
+            <input
+              id="usersSearch"
+              type="search"
+              placeholder="Search first or last name"
+            />
+
+            <select id="usersSortBy" aria-label="Sort users by">
+              <option value="id">Sort: ID</option>
+              <option value="first_name">First name</option>
+              <option value="last_name">Last name</option>
+            </select>
+
+            <select id="usersSortDirection" aria-label="Users sort direction">
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+
+            <button
+              class="button button-primary"
+              id="usersSearchButton"
+              type="button"
+            >
+              Search
+            </button>
+            <button class="button" id="usersResetButton" type="button">
+              Reset
+            </button>
+          </div>
+
           <div class="admin-table-wrap">
             <table>
               <thead>
@@ -199,6 +303,14 @@
               <tbody id="usersTableBody"></tbody>
             </table>
           </div>
+
+          <div class="collection-pagination">
+            <button class="button" id="usersPrevBtn" type="button">
+              Previous
+            </button>
+            <span id="usersPageInfo">Page 1 of 1</span>
+            <button class="button" id="usersNextBtn" type="button">Next</button>
+          </div>
         </section>
 
         <section
@@ -208,6 +320,46 @@
           hidden
         >
           <h2 id="ordersTitle">Orders</h2>
+
+          <div class="collection-controls">
+            <input
+              id="ordersUserIdFilter"
+              type="number"
+              min="1"
+              placeholder="Filter by user ID"
+            />
+
+            <select id="ordersStatusFilter" aria-label="Filter by order status">
+              <option value="">All statuses</option>
+              <option value="Processing">Processing</option>
+              <option value="Shipped">Shipped</option>
+              <option value="Delivered">Delivered</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+
+            <select id="ordersSortBy" aria-label="Sort orders by">
+              <option value="id">Sort: ID</option>
+              <option value="user_id">User ID</option>
+              <option value="status">Status</option>
+            </select>
+
+            <select id="ordersSortDirection" aria-label="Orders sort direction">
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+
+            <button
+              class="button button-primary"
+              id="ordersSearchButton"
+              type="button"
+            >
+              Search
+            </button>
+            <button class="button" id="ordersResetButton" type="button">
+              Reset
+            </button>
+          </div>
+
           <div class="admin-table-wrap">
             <table>
               <thead>
@@ -220,6 +372,16 @@
               </thead>
               <tbody id="ordersTableBody"></tbody>
             </table>
+          </div>
+
+          <div class="collection-pagination">
+            <button class="button" id="ordersPrevBtn" type="button">
+              Previous
+            </button>
+            <span id="ordersPageInfo">Page 1 of 1</span>
+            <button class="button" id="ordersNextBtn" type="button">
+              Next
+            </button>
           </div>
         </section>
       </div>

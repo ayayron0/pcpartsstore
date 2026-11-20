@@ -98,13 +98,6 @@
 }
 
 #partForm button[type="submit"],
-#brandForm button[type="submit"] {
-  grid-column: 1 / -1;
-  justify-self: center;
-  width: 100%;
-}
-
-#partForm button[type="submit"],
 #partForm #cancelPartEdit,
 #brandForm button[type="submit"],
 #brandForm #cancelBrandEdit {
@@ -130,6 +123,7 @@
 #partForm input,
 #partForm select,
 #brandForm input {
+  box-sizing: border-box;
   width: 100%;
   min-height: 42px;
   border: 1px solid var(--border-strong);
@@ -233,25 +227,7 @@
   background: #b91c1c;
 }
 
-.role-badge {
-  display: inline-block;
-  border-radius: 999px;
-  padding: 4px 10px;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: capitalize;
-}
-
-.role-admin {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
-
-.role-customer {
-  background: #dcfce7;
-  color: #15803d;
-}
-
+.role-badge,
 .status-badge {
   display: inline-block;
   border-radius: 999px;
@@ -260,24 +236,78 @@
   font-weight: 700;
 }
 
-.status-processing {
-  background: #fef3c7;
-  color: #92400e;
+.role-badge {
+  text-transform: capitalize;
 }
 
+.role-admin,
 .status-shipped {
   background: #dbeafe;
   color: #1d4ed8;
 }
 
+.role-customer,
 .status-delivered {
   background: #dcfce7;
   color: #15803d;
 }
 
+.status-processing {
+  background: #fef3c7;
+  color: #92400e;
+}
+
 .status-cancelled {
   background: #fee2e2;
   color: #b91c1c;
+}
+
+.collection-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.collection-controls button[id$="SearchButton"] {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+
+.collection-controls button[id$="SearchButton"]:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.collection-controls input,
+.collection-controls select,
+.collection-controls button {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+
+.collection-controls input,
+.collection-controls select {
+  min-height: 40px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  padding: 8px 10px;
+  background: var(--background);
+  color: var(--text);
+}
+
+.collection-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.collection-pagination button {
+  min-width: 110px;
 }
 
 @media (max-width: 700px) {
@@ -294,15 +324,18 @@
     margin-left: auto;
   }
 
-  #partForm {
-    grid-template-columns: 1fr;
-  }
-
+  #partForm,
   #brandForm {
     grid-template-columns: 1fr;
   }
 
   .admin-card {
     padding: 17px;
+  }
+}
+
+@media (max-width: 500px) {
+  .collection-pagination button {
+    min-width: 0;
   }
 }
