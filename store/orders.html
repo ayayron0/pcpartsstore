@@ -79,17 +79,21 @@
       </div>
     </section>
 
-    <section id="orderDetails"
-             class="account-card"
-             aria-labelledby="detailTitle"
-             aria-busy="false"
-             hidden>
-      <h2 id="detailTitle">Order details</h2>
-      <p id="detailMessage" role="status" aria-live="polite"></p>
-      <button id="closeDetails" class="button" type="button">
-        Close details
-      </button>
-    </section>
+    <dialog id="orderDetails"
+        class="product-dialog order-dialog"
+        aria-labelledby="detailTitle"
+        aria-busy="false">
+  <button id="closeDetails" class="button" type="button">
+    Close
+  </button>
+
+  <p class="eyebrow">YOUR ORDER</p>
+  <h2 id="detailTitle">Order details</h2>
+  <p id="detailMessage" role="status" aria-live="polite"></p>
+
+  <div id="detailItems"></div>
+  <p id="detailTotal"></p>
+</dialog>
   </main>
 </body>
 </html>

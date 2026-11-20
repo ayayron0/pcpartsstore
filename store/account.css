@@ -93,3 +93,23 @@ button:disabled {
     padding: 20px;
   }
 }
+
+.order-dialog {
+  width: min(720px, calc(100% - 32px));
+  max-height: 85vh;
+  box-sizing: border-box;
+  margin: auto;
+  overflow-y: auto;
+}
+
+.order-dialog #closeDetails {
+  display: block;
+  margin-left: auto;
+}
+
+.order-dialog #detailTotal {
+  padding-top: 20px;
+  border-top: 1px solid #34343b;
+  font-size: 20px;
+  font-weight: 700;
+}
