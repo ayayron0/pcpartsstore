@@ -42,6 +42,7 @@
         class="admin-message"
         role="status"
         aria-live="polite"
+        hidden
       ></p>
 
       <!-- Shown until the admin signs in. JavaScript will reveal the dashboard
@@ -111,7 +112,12 @@
             <button class="button button-primary" type="submit">
               Add part
             </button>
-            <button id="cancelPartEdit" type="button" hidden>
+            <button
+              id="cancelPartEdit"
+              class="button"
+              type="button"
+              hidden
+            >
               Cancel edit
             </button>
           </form>
@@ -147,7 +153,12 @@
             <button class="button button-primary" type="submit">
               Add brand
             </button>
-            <button id="cancelBrandEdit" type="button" hidden>
+            <button
+              id="cancelBrandEdit"
+              class="button"
+              type="button"
+              hidden
+            >
               Cancel edit
             </button>
           </form>

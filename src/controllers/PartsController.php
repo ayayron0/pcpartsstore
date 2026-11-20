@@ -287,7 +287,20 @@ class PartsController
         array $args
     ): Response {
         $partId = $args['id'];
-        $deletedRows = $this->partsModel->deletePart($partId);
+
+        try {
+            $deletedRows = $this->partsModel->deletePart($partId);
+        } catch (PDOException $e) {
+            if ((int) ($e->errorInfo[1] ?? 0) !== 1451) {
+                throw $e;
+            }
+
+            return sendError(
+                $this->responseFactory,
+                409,
+                'Cannot delete a part that is included in an order.'
+            );
+        }
 
         if ($deletedRows === 0) {
             // $response->getBody()->write(
@@ -438,8 +451,9 @@ class PartsController
     }
 
     // Combine the database price with an external exchange rate
-    public function convertedPrice(Request $request, Response $response, array $args): Response{
-        
+    public function convertedPrice(Request $request, Response $response, array $args): Response
+    {
+
         // Validate the part ID
         $partId = filter_var($args['id'], FILTER_VALIDATE_INT);
 
@@ -524,5 +538,4 @@ class PartsController
 
         return $response->withHeader('Content-Type', 'application/json');
     }
-
 }

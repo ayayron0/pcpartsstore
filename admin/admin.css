@@ -41,7 +41,26 @@
 }
 
 .admin-message {
-  color: var(--muted);
+  margin: 14px 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  padding: 12px 16px;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 600;
+  background: var(--surface-raised);
+}
+
+.admin-message--success {
+  border-color: #22c55e;
+  background: #163321;
+  color: #bbf7d0;
+}
+
+.admin-message--error {
+  border-color: #ef4444;
+  background: #3b1717;
+  color: #fecaca;
 }
 
 #loginPanel {
@@ -61,8 +80,50 @@
   margin-bottom: 28px;
 }
 
-#partForm button {
-  align-self: end;
+#logoutButton {
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  padding: 8px 12px;
+  background: transparent;
+  color: var(--text);
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
+}
+
+#logoutButton:hover {
+  border-color: #d51017;
+  background: #e5484d;
+  color: #141417;
+}
+
+#partForm button[type="submit"],
+#brandForm button[type="submit"] {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: 100%;
+}
+
+#partForm button[type="submit"],
+#partForm #cancelPartEdit,
+#brandForm button[type="submit"],
+#brandForm #cancelBrandEdit {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: 100%;
+}
+
+#cancelPartEdit,
+#cancelBrandEdit {
+  border-color: var(--border-strong);
+  background: var(--surface-raised);
+  color: var(--text);
+}
+
+#cancelPartEdit:hover,
+#cancelBrandEdit:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 #adminLoginForm input,
@@ -137,8 +198,39 @@
   text-transform: uppercase;
 }
 
-.admin-table-wrap td button {
-  margin-right: 6px;
+.admin-table-wrap td .table-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 84px;
+  min-height: 36px;
+  margin-right: 8px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.admin-table-wrap td .action-edit {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #fff;
+}
+
+.admin-table-wrap td .action-edit:hover {
+  background: #1d4ed8;
+}
+
+.admin-table-wrap td .action-delete {
+  border-color: #dc2626;
+  background: #dc2626;
+  color: #fff;
+}
+
+.admin-table-wrap td .action-delete:hover {
+  background: #b91c1c;
 }
 
 @media (max-width: 700px) {
