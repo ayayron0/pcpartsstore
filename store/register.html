@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create account | DoubleBolt</title>
+  <link rel="stylesheet" href="store.css">
+  <link rel="stylesheet" href="account.css">
+  <script src="register.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-main container">
+      <a class="logo" href="./index.html" aria-label="DoubleBolt home">
+        <svg class="double-bolt" viewBox="0 0 46 40" aria-hidden="true">
+          <path d="M13 2 2 23h10L8 38l22-24H18l7-12Z"/>
+          <path d="m32 2-9 18h9l-5 18 18-24H35l7-12Z"/>
+        </svg>
+        <span class="logo-double">DOUBLE</span>
+        <span class="logo-bolt">BOLT</span>
+      </a>
+      <nav class="account-nav" aria-label="Store">
+        <a href="./index.html">Shop components</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="account-main">
+    <a href="./index.html">← Back to shop</a>
+
+    <section class="account-card" aria-labelledby="registerTitle">
+      <p class="eyebrow">YOUR DOUBLEBOLT ACCOUNT</p>
+      <h1 id="registerTitle">Make yourself at home.</h1>
+      <p>Create an account to manage your profile and orders.</p>
+
+      <p id="registerMessage"
+         class="account-message"
+         role="status"
+         aria-live="polite"
+         hidden></p>
+
+      <form id="registerForm" class="account-form">
+        <label for="firstName">First name</label>
+        <input id="firstName" name="first_name"
+               autocomplete="given-name" maxlength="100" required>
+
+        <label for="lastName">Last name</label>
+        <input id="lastName" name="last_name"
+               autocomplete="family-name" maxlength="100" required>
+
+        <label for="email">Email address</label>
+        <input id="email" name="email" type="email"
+               autocomplete="email" maxlength="255" required>
+
+        <label for="password">Password — at least 8 characters</label>
+        <input id="password" name="password" type="password"
+               autocomplete="new-password" minlength="8" required>
+
+        <label for="confirmPassword">Confirm password</label>
+        <input id="confirmPassword" type="password"
+               autocomplete="new-password" minlength="8" required>
+
+        <button id="registerSubmit"
+                class="button button-primary" type="submit">
+          Create account
+        </button>
+      </form>
+
+      <div class="account-links">
+        <a href="./index.html">Return to the shop to sign in</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

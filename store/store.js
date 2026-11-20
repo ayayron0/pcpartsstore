@@ -291,6 +291,7 @@ async function openPart(id) {
       createElement("p", "", `Brand: ${brands.get(String(part.brand_id)) || part.brand_id}`),
       createElement("p", "", `Product ID: ${part.id}`)
     );
+    addCurrencyConversion(part, controller.signal);
   } catch (error) {
     if (error.name !== "AbortError") detailContent.textContent = error.message;
   }
@@ -386,7 +387,7 @@ function openLogin() {
 
 accountButton.addEventListener("click", () => {
   if (currentUser) {
-    showAccountMessage(`Signed in as ${currentUser.email}.`);
+    window.location.assign("./account.html");
     return;
   }
 
@@ -499,3 +500,100 @@ logoutButton.addEventListener("click", async () => {
 });
 
 restoreSession();
+
+function addCurrencyConversion(part, detailSignal) {
+  const controls = createElement("div", "sort-control");
+  const label = createElement("label", "", "Display currency");
+  const select = document.createElement("select");
+
+  select.id = "detailCurrency";
+  label.htmlFor = select.id;
+
+  for (const currency of ["CAD", "USD", "EUR", "GBP"]) {
+    select.add(new Option(currency, currency));
+  }
+
+  const result = createElement(
+    "p",
+    "auth-intro",
+    "Choose another currency to view an estimated conversion."
+  );
+
+  result.setAttribute("role", "status");
+  result.setAttribute("aria-live", "polite");
+
+  controls.append(label, select);
+  detailContent.append(controls, result);
+
+  let conversionRequest = null;
+
+  detailSignal.addEventListener(
+    "abort",
+    () => conversionRequest?.abort(),
+    { once: true }
+  );
+
+  select.addEventListener("change", async () => {
+    conversionRequest?.abort();
+    result.setAttribute("aria-busy", "false");
+
+    const currency = select.value;
+
+    if (currency === "CAD") {
+      result.textContent =
+        `Original price: ${money.format(Number(part.price))} CAD`;
+      return;
+    }
+
+    if (detailSignal.aborted) return;
+
+    const controller = new AbortController();
+    conversionRequest = controller;
+
+    result.textContent = "Fetching exchange rate…";
+    result.setAttribute("aria-busy", "true");
+
+    const url = new URL(
+      `parts/${encodeURIComponent(part.id)}/converted-price`,
+      apiBase
+    );
+
+    url.searchParams.set("currency", currency);
+
+    try {
+      const conversion = await readJson(url, controller.signal);
+
+      if (controller.signal.aborted || detailSignal.aborted) return;
+
+      const price = Number(conversion.converted_price);
+
+      if (!Number.isFinite(price)) {
+        throw new Error("The server returned an invalid converted price.");
+      }
+
+      const formatted = new Intl.NumberFormat("en-CA", {
+        style: "currency",
+        currency,
+      }).format(price);
+
+      result.textContent =
+        `${formatted} ${currency} · Estimated using ` +
+        `${conversion.rate_source}, ${conversion.rate_date}. ` +
+        "The original price remains in CAD.";
+    } catch (error) {
+      if (
+        error.name !== "AbortError"
+        && !controller.signal.aborted
+        && !detailSignal.aborted
+      ) {
+        result.textContent =
+          `Conversion unavailable: ${error.message} ` +
+          "You can still view the original CAD price.";
+      }
+    } finally {
+      if (conversionRequest === controller) {
+        result.setAttribute("aria-busy", "false");
+      }
+    }
+  });
+}
