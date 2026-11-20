@@ -1,49 +1,125 @@
 # DoubleBolt — PC Parts Store
 
-Team: Aaron Hossain and Daiyan Abrar Samin.
+Web Services course project by Aaron Hossain and Daiyan Abrar Samin.
 
-## Stack and structure
+DoubleBolt is a PC component storefront with a dark yellow theme, a JSON API,
+customer accounts, a shopping cart and an admin dashboard.
 
-PHP, Slim 4, PDO, MariaDB/MySQL, Composer, HTML and JavaScript.
+## Stack
 
-- index.php: API entry point; base path /pcpartsstore.
-- src/routes/: handlers and database queries.
-- src/config/: connection and configuration example.
-- database/pcpartsstore_db.sql: schema, relationships and synthetic seeds.
-- browse.html: list/detail page.
-- docs/openapi.yaml: API contract.
+PHP, Slim 4, Slim PSR-7, PDO, MariaDB/MySQL, Composer, HTML, CSS and JavaScript.
+The frontend uses plain JavaScript; no frontend framework or build step is required.
 
-## Run with Wampoon
+## Run locally with Wampoon
 
-1. Put the project in `D:\Wampoon\htdocs\pcpartsstore`.
-2. Start Apache and MariaDB.
-3. From the `backend` folder, run `D:\Wampoon\composer.bat install`.
-4. Create `pcpartsstore_db` in phpMyAdmin and import `database/pcpartsstore_db.sql`.
-5. If needed, copy `src/config/database.example.php` to `database.local.php` in the same folder and adjust credentials.
-6. Open <http://localhost/pcpartsstore/browse.html>.
+1. Place the project in `D:\Wampoon\htdocs\pcpartsstore`.
+2. Start Apache and MariaDB. Enable Apache `mod_rewrite` and `.htaccess` support.
+3. Open a terminal in the `backend` folder and run:
 
-Apache needs `mod_rewrite` and `.htaccess` support. Adjust the URL if using another port.
+   ```bat
+   D:\Wampoon\composer.bat install
+   ```
 
-## Build 1
+4. Create a database named `pcpartsstore_db` in phpMyAdmin, select it and import
+   `database/pcpartsstore_db.sql`.
+5. If your connection settings differ, copy `src/config/database.example.php` to
+   `src/config/database.local.php` and update its values. The local file is ignored by Git.
+6. Open <http://localhost/pcpartsstore/store/index.html>.
 
-The page displays database-backed parts and individual details, including missing-item and empty-list feedback.
+**Importing the seed resets the five project tables and deletes their existing
+users, orders and products.** Back up any data you want to keep before importing.
 
-API base: `/pcpartsstore`. Parts, brands, users and orders support collection/item GET, collection POST, and item PATCH/DELETE. Parts/brands write validation needs further work.
+The default database connection is `127.0.0.1:3306`, database `pcpartsstore_db`,
+username `root`, with an empty password. PHP needs PDO MySQL and cURL enabled.
+Adjust the URLs and API base path if you use a different project folder or port.
 
-The schema contains `brands`, `parts`, `users`, `orders` and `order_items`, with primary/foreign keys and synthetic seeds. Brands link to parts; users to orders; order items link orders and parts.
+## Demo accounts
 
-## Verification
+These accounts are included in the clean seed and are for local course demonstrations.
 
-Passed: item 200, missing item 404, populated list 200 and isolated empty list 200. Page behavior and seed values were verified. OpenAPI was validated in Swagger Editor.
+| Role | Email | Password |
+| --- | --- | --- |
+| Customer | customer1@example.com | Customer1!2026 |
+| Admin | admin@example.com | Admin!2026 |
 
-- API design: `docs/openapi.yaml`
-- Results: `docs/build-1-checks.md`
-- Saved requests: `docs/build-1-requests.http`
-- Empty fixture: `database/build-1-empty-fixture.sql`
+Passwords are stored as bcrypt hashes. The seed includes 48 products across GPU,
+CPU, Motherboard, RAM, Storage, PC Case, PSU and Cooling categories, with seven
+brands and local product images. Orders start empty and IDs start at 1.
+Prices are sample CAD values, not live retail offers. Image sources are listed in
+`store/images/products/SOURCES.md`.
 
-For the empty check, select the fixture database in local configuration, then restore normal configuration afterward.
+## Pages
 
-## Handoff
+| Page | Local URL |
+| --- | --- |
+| Storefront and sign-in | <http://localhost/pcpartsstore/store/index.html> |
+| Registration | <http://localhost/pcpartsstore/store/register.html> |
+| Account | <http://localhost/pcpartsstore/store/account.html> |
+| Cart and checkout | <http://localhost/pcpartsstore/store/cart.html> |
+| My orders | <http://localhost/pcpartsstore/store/orders.html> |
+| Admin dashboard | <http://localhost/pcpartsstore/admin/admin.html> |
 
-Teammate review completed.
-Submitted commit SHA:
+The storefront supports search, category and brand filters, sorting, pagination,
+product details and currency conversion. Customers can edit their profile, place
+orders and view their itemized order details.
+
+## API and Build 3 behavior
+
+API base: `http://localhost/pcpartsstore`.
+The agreed representation is JSON. Send `Accept: application/json` and, for JSON
+request bodies, `Content-Type: application/json`.
+
+- Resources: `/brands`, `/parts`, `/users` and `/orders`.
+- Authentication: `/auth/login`, `/auth/me` and `/auth/logout`.
+- Brand and part reads are public; writes require admin permission.
+- User and order access is restricted by session, role and ownership checks.
+- Protected writes require the session's `X-CSRF-Token`; browser clients also send
+  the session cookie.
+- Checkout accepts `checkout_key` and `items` containing `part_id` and `quantity`.
+  It uses the signed-in customer and database prices, saving the order and items
+  in one transaction. Retrying an identical key returns the existing order;
+  changing its items returns a conflict.
+- `/parts/{id}/converted-price?currency=USD` uses Frankfurter exchange rates.
+  USD, EUR and GBP are supported; upstream failures return a safe 502 response.
+
+See `docs/openapi.yaml` for request schemas, query parameters and responses.
+
+## Project structure
+
+- `index.php`: API entry point and middleware setup.
+- `backend/composer.json` and `backend/composer.lock`: PHP dependencies.
+- `src/controllers/`, `src/models/`, `src/routes/`: API implementation.
+- `src/middlewares/`: authentication, authorization, CSRF and request handling.
+- `src/services/`: exchange-rate integration.
+- `src/config/`: database connection settings and example configuration.
+- `database/pcpartsstore_db.sql`: complete schema and clean seed.
+- `store/`: customer frontend and product images.
+- `admin/`: admin dashboard.
+- `client/` and `browse.html`: earlier course client pages.
+- `docs/`: API contract and build verification records.
+
+Commit the SQL seed, product images, source files and Composer lockfile.
+`backend/vendor/` is ignored and is restored by Composer.
+
+## Verification and remaining work
+
+Local test results are recorded in `docs/build-3-checks.md` and
+`docs/build-3-security-checks.md`. Earlier checkout evidence uses IDs and prices
+from before the clean database reset; those values do not describe the current seed.
+The QA report also contains earlier findings that need reconciliation with the
+current implementation.
+
+The uploaded project passed syntax checks for 23 application PHP files and 11
+JavaScript files. All 48 seeded image paths exist and the image files decode.
+These checks do not replace a full browser and API regression against Wampoon.
+
+Before final submission:
+
+- Update the older `client/` management pages to send CSRF tokens and use the
+  current checkout request format.
+- Run the final regression against the clean seed and record the assessed commit.
+- Update the QA report and capture any remaining required evidence.
+- Complete any deferred visual polish. Deliberate database lock-timeout/deadlock
+  injection has not been tested.
+
+Final submitted commit SHA: pending.

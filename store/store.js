@@ -87,13 +87,7 @@ function createElement(tag, className, text) {
 function renderPart(part) {
   const card = createElement("article", "product-card");
 
-  const image = createElement("div", "product-image");
-  const placeholder = createElement("div", "product-placeholder");
-  placeholder.append(
-    createElement("strong", "", part.category),
-    createElement("small", "", "Image coming soon")
-  );
-  image.append(placeholder);
+  const image = createProductImage(part);
 
   const body = createElement("div", "product-body");
   const brandName = brands.get(String(part.brand_id));
@@ -302,12 +296,25 @@ async function openPart(id) {
     if (controller.signal.aborted || !detailDialog.open) return;
 
     detailContent.replaceChildren(
-      createElement("p", "product-category", part.category),
-      createElement("h2", "", part.name),
-      createElement("p", "product-price", money.format(Number(part.price))),
-      createElement("p", "", `Brand: ${brands.get(String(part.brand_id)) || part.brand_id}`),
-      createElement("p", "", `Product ID: ${part.id}`)
-    );
+  createElement("p", "product-category", part.category),
+  createElement("h2", "", part.name),
+  createProductImage(part),
+  createElement(
+    "p",
+    "product-price",
+    money.format(Number(part.price))
+  ),
+  createElement(
+    "p",
+    "product-description",
+    part.description || "No description available."
+  ),
+  createElement(
+    "p",
+    "",
+    `Brand: ${brands.get(String(part.brand_id)) || part.brand_id}`
+  ),
+);
     addCurrencyConversion(part, controller.signal);
   } catch (error) {
     if (error.name !== "AbortError") detailContent.textContent = error.message;
@@ -613,4 +620,48 @@ function addCurrencyConversion(part, detailSignal) {
       }
     }
   });
+
+}
+
+function createProductImage(part) {
+  const container = createElement("div", "product-image");
+
+  function fallback() {
+    const placeholder = createElement("div", "product-placeholder");
+    placeholder.append(
+      createElement("strong", "", part.category),
+      createElement("small", "", "Image unavailable")
+    );
+    container.replaceChildren(placeholder);
+  }
+
+  if (!part.image_url || typeof part.image_url !== "string") {
+    fallback();
+    return container;
+  }
+
+  try {
+    const url = new URL(part.image_url, apiBase);
+    const folder = new URL("store/images/products/", apiBase);
+
+    if (
+      url.origin !== folder.origin
+      || !url.pathname.startsWith(folder.pathname)
+    ) {
+      fallback();
+      return container;
+    }
+
+    const photo = document.createElement("img");
+    photo.alt = part.name;
+    photo.loading = "lazy";
+    photo.decoding = "async";
+    photo.addEventListener("error", fallback, { once: true });
+    photo.src = url.href;
+    container.append(photo);
+  } catch {
+    fallback();
+  }
+
+  return container;
 }
