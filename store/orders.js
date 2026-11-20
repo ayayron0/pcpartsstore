@@ -33,7 +33,7 @@ function showSignedOut() {
   listRequest?.abort();
   detailRequest?.abort();
   content.hidden = true;
-  details.hidden = true;
+  details.close();
   retryButton.hidden = true;
   signedOutLinks.hidden = false;
   identity.textContent = "Sign in to view your orders.";
@@ -160,14 +160,27 @@ async function loadOrders() {
 
 async function openOrder(id) {
   detailRequest?.abort();
+
   const controller = new AbortController();
   detailRequest = controller;
 
-  details.hidden = false;
+  const itemContainer = document.getElementById("detailItems");
+  const totalElement = document.getElementById("detailTotal");
+
+  const orderMoney = new Intl.NumberFormat("en-CA", {
+    style: "currency",
+    currency: "CAD",
+  });
+
+  itemContainer.replaceChildren();
+  totalElement.textContent = "";
+
+  if (!details.open) {
+  details.showModal();
+}
   details.setAttribute("aria-busy", "true");
   detailTitle.textContent = `Order #${id}`;
   detailMessage.textContent = "Loading order…";
-  details.scrollIntoView({ behavior: "smooth", block: "start" });
 
   try {
     const order = await readApi(
@@ -175,8 +188,52 @@ async function openOrder(id) {
       controller.signal
     );
 
+    if (controller.signal.aborted) return;
+
+    if (!Array.isArray(order.items)) {
+      throw new Error("Order items are missing from the server response.");
+    }
+
     detailTitle.textContent = `Order #${order.id}`;
     detailMessage.textContent = `Status: ${order.status}`;
+
+    if (order.items.length === 0) {
+      itemContainer.textContent = "No items were recorded for this order.";
+    }
+
+    for (const item of order.items) {
+      const card = document.createElement("article");
+      card.className = "account-card";
+
+      const name = document.createElement("h3");
+      name.textContent = item.name;
+
+      const quantity = document.createElement("p");
+      quantity.textContent = `Quantity: ${item.quantity}`;
+
+      const price = document.createElement("p");
+      price.textContent = item.unit_price === null
+        ? "Purchase price was not recorded."
+        : `Purchase price: ${
+            orderMoney.format(Number(item.unit_price))
+          } each`;
+
+      const lineTotal = document.createElement("p");
+      lineTotal.textContent = item.line_total === null
+        ? "Line total unavailable."
+        : `Line total: ${
+            orderMoney.format(Number(item.line_total))
+          }`;
+
+      card.append(name, quantity, price, lineTotal);
+      itemContainer.append(card);
+    }
+
+    totalElement.textContent = order.total === null
+      ? "Total unavailable: this order has no complete purchase-price record."
+      : `Order total: ${
+          orderMoney.format(Number(order.total))
+        } CAD`;
   } catch (error) {
     if (error.name !== "AbortError") {
       detailMessage.textContent = error.message;
@@ -216,7 +273,7 @@ document.getElementById("orderFilter")
     activeStatus = statusFilter.value;
     page = 1;
     detailRequest?.abort();
-    details.hidden = true;
+    details.close();
     loadOrders();
   });
 
@@ -235,7 +292,7 @@ nextButton.addEventListener("click", () => {
 document.getElementById("closeDetails")
   .addEventListener("click", () => {
     detailRequest?.abort();
-    details.hidden = true;
+    details.close();
   });
 
 retryButton.addEventListener("click", () => {
@@ -247,3 +304,8 @@ retryButton.addEventListener("click", () => {
 });
 
 start();
+
+// Stop an unfinished request when Close or Escape dismisses the popup.
+details.addEventListener("close", () => {
+  detailRequest?.abort();
+});

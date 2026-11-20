@@ -116,7 +116,24 @@ function renderPart(part) {
   button.type = "button";
   button.addEventListener("click", () => openPart(part.id));
 
-  body.append(category, title, price, button);
+  const addButton = createElement(
+  "button",
+  "button button-primary",
+  "Add to cart"
+);
+
+addButton.type = "button";
+
+addButton.addEventListener("click", () => {
+  try {
+    DoubleBoltCart.add(part.id);
+    showAccountMessage(`${part.name} added to your cart.`);
+  } catch (error) {
+    showAccountMessage(error.message);
+  }
+});
+
+body.append(category, title, price, button, addButton);
   card.append(image, body);
   return card;
 }

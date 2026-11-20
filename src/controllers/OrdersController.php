@@ -195,64 +195,168 @@ class OrdersController
             );
         }
 
-        $response->getBody()->write(json_encode($order));
+    // Read items only after the ownership check above has passed.
+    $order['items'] = $this->ordersModel->getOrderItems(
+         (string) $orderId
+    );
+
+    $order['currency'] = 'CAD';
+
+    $order['total'] = $this->ordersModel->getOrderTotal(
+        (string) $orderId
+    );
+
+    $response->getBody()->write(json_encode($order));
 
         return $response->withHeader('Content-Type', 'application/json');
     }
 
+
     // POST /orders
-    public function store(Request $request, Response $response): Response
-    {
-        // Read the JSON body parsed by Slim middleware
-        $data = $request->getParsedBody();
+public function store(Request $request, Response $response): Response
+{
+    $data = $request->getParsedBody();
 
-        // Reject a missing or malformed JSON body
-        if (!is_array($data)) {
-            return sendError(
-                $this->responseFactory,
-                400,
-                'Malformed JSON payload.'
-            );
-        }
+    if (!is_array($data)) {
+        return sendError(
+            $this->responseFactory,
+            400,
+            'Malformed JSON payload.'
+        );
+    }
 
-        /// Assign the order to the logged-in user
-        $data['user_id'] = (int) $_SESSION['user_id'];
+    // The server supplies ownership, prices and order status.
+    if (array_diff(array_keys($data), ['items', 'checkout_key'])) {
+        return sendError(
+            $this->responseFactory,
+            422,
+            'Validation Failed',
+            ['fields' => 'Provide items and checkout_key only.']
+        );
+    }
 
-        // New orders always start as Processing
-        $status = 'Processing';
+    $checkoutKey = $data['checkout_key'] ?? null;
 
-        // Validate the order status
-        if (!in_array($status, ['Processing', 'Shipped', 'Delivered', 'Cancelled'], true)) {
+    if (
+        !is_string($checkoutKey)
+        || !preg_match('/^[A-Za-z0-9_-]{16,64}$/D', $checkoutKey)
+    ) {
+        return sendError(
+            $this->responseFactory,
+            422,
+            'Validation Failed',
+            [
+                'checkout_key' =>
+                    'Use 16–64 letters, numbers, underscores or hyphens.'
+            ]
+        );
+    }
+
+    $items = $data['items'] ?? null;
+
+    if (
+        !is_array($items)
+        || !array_is_list($items)
+        || count($items) < 1
+        || count($items) > 50
+    ) {
+        return sendError(
+            $this->responseFactory,
+            422,
+            'Validation Failed',
+            ['items' => 'Provide a list containing 1–50 cart items.']
+        );
+    }
+
+    $validatedItems = [];
+    $seenParts = [];
+
+    foreach ($items as $index => $item) {
+        if (
+            !is_array($item)
+            || array_diff(array_keys($item), ['part_id', 'quantity'])
+            || !isset($item['part_id'], $item['quantity'])
+            || !is_int($item['part_id'])
+            || $item['part_id'] < 1
+            || !is_int($item['quantity'])
+            || $item['quantity'] < 1
+            || $item['quantity'] > 99
+        ) {
             return sendError(
                 $this->responseFactory,
                 422,
                 'Validation Failed',
-                ['status' => 'Status must be Processing, Shipped, Delivered or Cancelled.']
+                [
+                    "items.$index" =>
+                        'Provide a positive integer part_id and quantity from 1–99.'
+                ]
             );
         }
 
-        try {
-            $id = $this->ordersModel->createOrder($data['user_id'], $status);
-        } catch (PDOException $e) {
-            if ((int)($e->errorInfo[1] ?? 0) !== 1452) {
-                throw $e;
-            }
-
+        if (isset($seenParts[$item['part_id']])) {
             return sendError(
                 $this->responseFactory,
-                404,
-                'User not found'
+                422,
+                'Validation Failed',
+                ['items' => 'Each part may appear only once. Adjust its quantity.']
             );
         }
 
-        $response->getBody()->write(
-            json_encode(['message' => 'New order added', 'id' => $id])
-        );
+        $seenParts[$item['part_id']] = true;
 
-        return $response
-            ->withStatus(201)
-            ->withHeader('Content-Type', 'application/json');
+        $validatedItems[] = [
+            'part_id' => $item['part_id'],
+            'quantity' => $item['quantity'],
+        ];
     }
+
+    try {
+        $result = $this->ordersModel->createCheckout(
+            (int) $_SESSION['user_id'],
+            $validatedItems,
+            $checkoutKey
+        );
+    } catch (DomainException $exception) {
+        return sendError(
+            $this->responseFactory,
+            409,
+            $exception->getMessage()
+        );
+    } catch (PDOException $exception) {
+        $databaseCode = (int) ($exception->errorInfo[1] ?? 0);
+
+        if ($databaseCode === 1452) {
+            return sendError(
+                $this->responseFactory,
+                409,
+                'An account or cart item is no longer available.'
+            );
+        }
+
+        if (in_array($databaseCode, [1205, 1213], true)) {
+            return sendError(
+                $this->responseFactory,
+                503,
+                'Checkout is temporarily busy. Retry with the same checkout key.'
+            )->withHeader('Retry-After', '1');
+        }
+
+        throw $exception;
+    }
+
+    $response->getBody()->write(json_encode([
+        'message' => $result['replayed']
+            ? 'Checkout already completed. Returning the existing order.'
+            : 'Order placed successfully.',
+        'id' => $result['id'],
+        'replayed' => $result['replayed'],
+    ]));
+
+    return $response
+        ->withStatus($result['replayed'] ? 200 : 201)
+        ->withHeader('Content-Type', 'application/json')
+        ->withHeader('Cache-Control', 'no-store');
+}
 
     // PATCH /orders/{id}
     public function patch(

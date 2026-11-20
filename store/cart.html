@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your cart | DoubleBolt</title>
+  <link rel="stylesheet" href="store.css">
+  <link rel="stylesheet" href="account.css">
+  <script src="cart-state.js" defer></script>
+  <script src="cart.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-main container">
+      <a class="logo" href="./index.html" aria-label="DoubleBolt home">
+        <svg class="double-bolt" viewBox="0 0 46 40" aria-hidden="true">
+          <path d="M13 2 2 23h10L8 38l22-24H18l7-12Z"/>
+          <path d="m32 2-9 18h9l-5 18 18-24H35l7-12Z"/>
+        </svg>
+        <span class="logo-double">DOUBLE</span>
+        <span class="logo-bolt">BOLT</span>
+      </a>
+
+      <nav class="account-nav" aria-label="Account">
+        <a href="./index.html">Shop components</a>
+        <a href="./account.html">My account</a>
+        <a href="./orders.html">My orders</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="account-main">
+    <a href="./index.html">← Continue shopping</a>
+
+    <section class="account-card" aria-labelledby="cartTitle">
+      <p class="eyebrow">YOUR NEXT BUILD</p>
+      <h1 id="cartTitle">Your cart.</h1>
+      <p id="cartIdentity">Checking your session…</p>
+
+      <p id="cartMessage" class="account-message"
+         role="status" aria-live="polite" hidden></p>
+
+      <div id="cartItems" aria-busy="true"></div>
+
+      <p id="cartTotal" role="status"></p>
+      <p>Prices are in CAD. Final item prices are saved by the server.</p>
+
+      <div class="account-links">
+        <button id="checkoutButton"
+                class="button button-primary" type="button" disabled>
+          Place order
+        </button>
+
+        <button id="refreshCart" class="button" type="button">
+          Refresh cart
+        </button>
+
+        <button id="clearCart" class="button" type="button">
+          Clear cart
+        </button>
+      </div>
+
+      <div class="account-links">
+        <a id="signInLink" href="./index.html" hidden>
+          Return to shop to sign in
+        </a>
+        <a id="ordersLink" href="./orders.html" hidden>
+          View your orders →
+        </a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
