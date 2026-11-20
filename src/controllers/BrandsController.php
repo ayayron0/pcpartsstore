@@ -207,7 +207,20 @@ class BrandsController
         array $args
     ): Response {
         $brandId = $args['id'];
-        $deletedRows = $this->brandsModel->deleteBrand($brandId);
+
+        try {
+            $deletedRows = $this->brandsModel->deleteBrand($brandId);
+        } catch (PDOException $e) {
+            if ((int) ($e->errorInfo[1] ?? 0) !== 1451) {
+                throw $e;
+            }
+
+            return sendError(
+                $this->responseFactory,
+                409,
+                'Cannot delete a brand that is used by parts.'
+            );
+        }
 
         if ($deletedRows === 0) {
             return sendError(
