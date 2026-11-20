@@ -30,7 +30,7 @@ class UsersModel
     ): array {
         //fetch one page in a consistent ID order
         $stmt = $this->pdo->prepare(
-            "SELECT id, first_name, last_name, email
+            "SELECT id, first_name, last_name, email, role
             FROM users $whereSql
             ORDER BY $sort $direction, id ASC
             LIMIT :limit OFFSET :offset"

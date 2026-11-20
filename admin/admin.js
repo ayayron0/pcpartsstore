@@ -55,6 +55,7 @@ function showUserSession(user, token) {
   showLoginMessage("");
   showPageMessage("");
   loadInventory();
+  loadUsersAndOrders();
 }
 
 async function apiRequest(path, method = "GET", body) {
@@ -159,6 +160,160 @@ async function loadInventory() {
     }
 
     showPageMessage("");
+  } catch (error) {
+    showPageMessage(error.message, "error");
+  }
+}
+
+async function loadUsersAndOrders() {
+  const params = new URLSearchParams({ page: "1", limit: "50" });
+
+  try {
+    const [userResult, orderResult] = await Promise.all([
+      apiRequest(`users?${params}`),
+      apiRequest(`orders?${params}`),
+    ]);
+
+    if (!Array.isArray(userResult.data) || !Array.isArray(orderResult.data)) {
+      throw new Error("The server returned an unexpected list.");
+    }
+
+    const userRows = userResult.data.map((user) => {
+      const row = document.createElement("tr");
+
+      addCell(row, user.id);
+      addCell(row, user.first_name);
+      addCell(row, user.last_name);
+      addCell(row, user.email);
+
+      const roleCell = document.createElement("td");
+      const roleBadge = document.createElement("span");
+      const role = String(user.role || "customer").toLowerCase();
+
+      roleBadge.className = `role-badge role-${role}`;
+      roleBadge.textContent = role;
+      roleCell.append(roleBadge);
+      row.append(roleCell);
+
+      const actions = document.createElement("td");
+      actions.append(
+        makeActionButton("Edit", () => editUser(user)),
+        makeActionButton("Delete", () => deleteUser(user)),
+      );
+      row.append(actions);
+
+      return row;
+    });
+
+    document.getElementById("usersTableBody").replaceChildren(...userRows);
+
+    const orderRows = orderResult.data.map((order) => {
+      const row = document.createElement("tr");
+      addCell(row, order.id);
+      addCell(row, order.user_id);
+      //   addCell(row, order.status);
+
+      const statusCell = document.createElement("td");
+      const statusBadge = document.createElement("span");
+      const status = String(order.status || "").toLowerCase();
+
+      statusBadge.className = `status-badge status-${status}`;
+      statusBadge.textContent = order.status || "Unknown";
+      statusCell.append(statusBadge);
+      row.append(statusCell);
+
+      const actions = document.createElement("td");
+      actions.append(
+        makeActionButton("Edit", () => editOrder(order)),
+        makeActionButton("Delete", () => deleteOrder(order)),
+      );
+      row.append(actions);
+
+      return row;
+    });
+
+    document.getElementById("ordersTableBody").replaceChildren(...orderRows);
+  } catch (error) {
+    showPageMessage(error.message, "error");
+  }
+}
+
+async function editUser(user) {
+  const firstName = window.prompt("First name:", user.first_name);
+  if (firstName === null) return;
+
+  const lastName = window.prompt("Last name:", user.last_name);
+  if (lastName === null) return;
+
+  const email = window.prompt("Email:", user.email);
+  if (email === null) return;
+
+  try {
+    const result = await apiRequest(
+      `users/${encodeURIComponent(user.id)}`,
+      "PATCH",
+      {
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        email: email.trim(),
+      },
+    );
+
+    await loadUsersAndOrders();
+    showPageMessage(result.message || "User updated.", "success");
+  } catch (error) {
+    showPageMessage(error.message, "error");
+  }
+}
+
+async function deleteUser(user) {
+  if (!window.confirm(`Delete user "${user.email}"?`)) return;
+
+  try {
+    const result = await apiRequest(
+      `users/${encodeURIComponent(user.id)}`,
+      "DELETE",
+    );
+
+    await loadUsersAndOrders();
+    showPageMessage(result.message || "User deleted.", "success");
+  } catch (error) {
+    showPageMessage(error.message, "error");
+  }
+}
+
+async function editOrder(order) {
+  const status = window.prompt(
+    "New status (Processing, Shipped, Delivered, Cancelled):",
+    order.status,
+  );
+  if (status === null) return;
+
+  try {
+    const result = await apiRequest(
+      `orders/${encodeURIComponent(order.id)}`,
+      "PATCH",
+      { status: status.trim() },
+    );
+
+    await loadUsersAndOrders();
+    showPageMessage(result.message || "Order updated.", "success");
+  } catch (error) {
+    showPageMessage(error.message, "error");
+  }
+}
+
+async function deleteOrder(order) {
+  if (!window.confirm(`Delete order #${order.id}?`)) return;
+
+  try {
+    const result = await apiRequest(
+      `orders/${encodeURIComponent(order.id)}`,
+      "DELETE",
+    );
+
+    await loadUsersAndOrders();
+    showPageMessage(result.message || "Order deleted.", "success");
   } catch (error) {
     showPageMessage(error.message, "error");
   }
